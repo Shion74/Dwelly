@@ -33,11 +33,37 @@
             transform: translateY(-5px);
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
-        .listing-photo {
+        .listing-photo-container {
+            position: relative;
             width: 100%;
             height: 200px;
-            object-fit: cover;
             background-color: #f5f6fa;
+            overflow: hidden;
+        }
+        .listing-photo {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .listing-photo.loaded {
+            opacity: 1;
+        }
+        .photo-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f6fa;
+            color: #95a5a6;
+        }
+        .photo-placeholder i {
+            font-size: 2rem;
         }
         .listing-content {
             padding: 1.5rem;
@@ -135,13 +161,19 @@
                 <div class="listings-grid">
                     <% listings.forEach(listing => { %>
                         <a href="/listings/<%= listing.post_id %>" class="listing-card">
-                            <img src="<%= listing.photos && listing.photos.length > 0 ? listing.photos[0] : '/images/no-image.jpg' %>" 
-                                 alt="<%= listing.type %>" 
-                                 class="listing-photo"
-                                 onerror="this.src='/images/no-image.jpg'">
+                            <div class="listing-photo-container">
+                                <div class="photo-placeholder">
+                                    <i class="fas fa-home"></i>
+                                </div>
+                                <img src="<%= listing.photos && listing.photos.length > 0 ? listing.photos[0] : '/images/no-image.jpg' %>" 
+                                     alt="<%= listing.type %>" 
+                                     class="listing-photo"
+                                     onload="this.classList.add('loaded')"
+                                     onerror="this.src='/images/no-image.jpg'; this.classList.add('loaded')">
+                            </div>
                             <div class="listing-content">
                                 <div>
-                                    <h2 class="listing-title"><%= listing.type %></h2>
+                                    <h2 class="listing-title"><%= listing.type || 'Unknown Type' %></h2>
                                     <div class="listing-meta">
                                         Posted by <%= listing.poster_name %> • 
                                         <%= new Date(listing.created_at).toLocaleDateString() %>
@@ -157,11 +189,14 @@
                                 <div class="listing-stats">
                                     <div class="stat">
                                         <i class="fas fa-heart"></i>
-                                        <%= listing.favorite_count || 0 %> favorites
+                                        <%= listing.favorite_count %> favorites
                                     </div>
                                     <div class="stat">
                                         <i class="fas fa-star"></i>
                                         <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %>
+                                        <% if (listing.rating_count > 0) { %>
+                                            (<%= listing.rating_count %>)
+                                        <% } %>
                                     </div>
                                 </div>
                             </div>

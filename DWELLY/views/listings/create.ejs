@@ -235,15 +235,14 @@
                     <div class="form-section">
                         <h3>Property Details</h3>
                         <div class="form-group">
-                            <label class="form-label required" for="type">Type of Rental</label>
-                            <select class="form-control" id="type" name="type" required>
+                            <label class="form-label required" for="type_id">Type of Rental</label>
+                            <select class="form-control" id="type_id" name="type_id" required>
                                 <option value="">Select a type</option>
-                                <option value="condo" <%= formData && formData.type === 'condo' ? 'selected' : '' %>>Condo</option>
-                                <option value="apartment" <%= formData && formData.type === 'apartment' ? 'selected' : '' %>>Apartment</option>
-                                <option value="dorm" <%= formData && formData.type === 'dorm' ? 'selected' : '' %>>Dorm</option>
-                                <option value="house" <%= formData && formData.type === 'house' ? 'selected' : '' %>>House</option>
-                                <option value="room" <%= formData && formData.type === 'room' ? 'selected' : '' %>>Room</option>
-                                <option value="bedspace" <%= formData && formData.type === 'bedspace' ? 'selected' : '' %>>Bedspace</option>
+                                <% roomTypes.forEach(function(type) { %>
+                                    <option value="<%= type.type_id %>" <%= formData && formData.type_id == type.type_id ? 'selected' : '' %>>
+                                        <%= type.display_name %>
+                                    </option>
+                                <% }); %>
                             </select>
                         </div>
 

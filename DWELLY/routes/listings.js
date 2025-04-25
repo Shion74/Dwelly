@@ -48,12 +48,14 @@ router.get('/', async (req, res) => {
     try {
         const [listings] = await pool.query(`
             SELECT p.*, u.full_name as poster_name,
+                   rt.type_name, rt.display_name as type_display,
                    GROUP_CONCAT(ph.file_path) as photos,
                    COUNT(DISTINCT f.user_id) as favorite_count,
                    AVG(r.stars) as average_rating,
                    COUNT(DISTINCT r.rating_id) as rating_count
             FROM posts p
             LEFT JOIN users u ON p.user_id = u.user_id
+            LEFT JOIN room_types rt ON p.type_id = rt.type_id
             LEFT JOIN photos ph ON p.post_id = ph.post_id
             LEFT JOIN favorites f ON p.post_id = f.post_id
             LEFT JOIN ratings r ON p.post_id = r.post_id
@@ -62,10 +64,17 @@ router.get('/', async (req, res) => {
             ORDER BY p.created_at DESC
         `);
 
+        console.log('Raw listings data:', listings.map(l => ({ id: l.post_id, type: l.type_display })));
+
         // Process photos for each listing
         const processedListings = listings.map(listing => ({
             ...listing,
-            photos: listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : []
+            photos: listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : [],
+            price: listing.price ? parseFloat(listing.price) : null,
+            average_rating: listing.average_rating ? parseFloat(listing.average_rating) : null,
+            favorite_count: parseInt(listing.favorite_count) || 0,
+            rating_count: parseInt(listing.rating_count) || 0,
+            type: listing.type_display || 'Unknown Type'
         }));
 
         res.render('listings/index', {
@@ -83,20 +92,30 @@ router.get('/', async (req, res) => {
 });
 
 // Get create listing page
-router.get('/create', isAuthenticated, (req, res) => {
-    res.render('listings/create', {
-        title: 'Create Listing - Dwelly',
-        user: req.session.user,
-        errors: [],
-        formData: {}
-    });
+router.get('/create', isAuthenticated, async (req, res) => {
+    try {
+        const [roomTypes] = await pool.query('SELECT * FROM room_types ORDER BY type_name');
+        res.render('listings/create', {
+            title: 'Create Listing - Dwelly',
+            user: req.session.user,
+            errors: [],
+            formData: {},
+            roomTypes
+        });
+    } catch (error) {
+        console.error('Error fetching room types:', error);
+        res.status(500).render('error', {
+            title: '500 - Server Error',
+            message: 'Error loading room types'
+        });
+    }
 });
 
 // Create a new listing
 router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, res) => {
     try {
         const { 
-            type, 
+            type_id, 
             street, 
             barangay, 
             city, 
@@ -113,7 +132,7 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
 
         // Validate required fields
         const errors = [];
-        if (!type) errors.push('Type of rental is required');
+        if (!type_id) errors.push('Type of rental is required');
         if (!street) errors.push('Street address is required');
         if (!barangay) errors.push('Barangay is required');
         if (!city) errors.push('City is required');
@@ -142,11 +161,13 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
 
         if (errors.length > 0) {
             console.log('Validation errors:', errors);
+            const [roomTypes] = await pool.query('SELECT * FROM room_types ORDER BY type_name');
             return res.render('listings/create', {
                 title: 'Create Listing - Dwelly',
                 user: req.session.user,
                 errors,
-                formData: req.body // Preserve form data
+                formData: req.body,
+                roomTypes
             });
         }
 
@@ -158,12 +179,12 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
             // Insert listing into database
             const [result] = await connection.query(
                 `INSERT INTO posts (
-                    user_id, type, street, barangay, city, 
+                    user_id, type_id, street, barangay, city, 
                     landlord_name, contact_number, social_link, 
                     maps_link, description, price
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
-                    req.session.user.id, type, street, barangay, city,
+                    req.session.user.id, type_id, street, barangay, city,
                     landlord_name, contact_number, social_media_link || null,
                     req.body.google_maps_link || null, description || null, price || null
                 ]
@@ -230,7 +251,7 @@ router.get('/:id', async (req, res) => {
 
         // Get photos and format their paths
         const [photos] = await pool.query(
-            'SELECT * FROM photos WHERE post_id = ? ORDER BY created_at ASC',
+            'SELECT * FROM photos WHERE post_id = ? ORDER BY photo_id ASC',
             [req.params.id]
         );
 
@@ -255,7 +276,7 @@ router.get('/:id', async (req, res) => {
         delete req.session.success;
 
         res.render('listings/details', {
-            title: `${listing.type} - Dwelly`,
+            title: `${listing.type_display} - Dwelly`,
             user: req.session.user,
             listing,
             photos: formattedPhotos,
@@ -358,6 +379,184 @@ router.post('/:id/report', isAuthenticated, async (req, res) => {
     } catch (error) {
         console.error('Error reporting listing:', error);
         res.status(500).json({ error: 'Failed to report listing' });
+    }
+});
+
+// Get edit listing page
+router.get('/:id/edit', isAuthenticated, async (req, res) => {
+    try {
+        const [listings] = await pool.query(`
+            SELECT p.*, GROUP_CONCAT(ph.file_path) as photos
+            FROM posts p
+            LEFT JOIN photos ph ON p.post_id = ph.post_id
+            WHERE p.post_id = ? AND p.user_id = ?
+            GROUP BY p.post_id
+        `, [req.params.id, req.session.user.id]);
+
+        if (listings.length === 0) {
+            return res.status(404).render('error', {
+                title: '404 - Listing Not Found',
+                message: 'The listing you are looking for does not exist or you do not have permission to edit it.'
+            });
+        }
+
+        const listing = listings[0];
+        listing.photos = listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : [];
+
+        res.render('listings/edit', {
+            title: 'Edit Listing - Dwelly',
+            user: req.session.user,
+            listing,
+            errors: [],
+            formData: listing
+        });
+    } catch (error) {
+        console.error('Error fetching listing for edit:', error);
+        res.status(500).render('error', {
+            title: '500 - Server Error',
+            message: 'Error loading listing for edit'
+        });
+    }
+});
+
+// Update a listing
+router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req, res) => {
+    try {
+        const { 
+            type_id, 
+            street, 
+            barangay, 
+            city, 
+            landlord_name, 
+            contact_number, 
+            social_media_link, 
+            google_maps_link,
+            description,
+            price
+        } = req.body;
+
+        // Validate required fields
+        const errors = [];
+        if (!type_id) errors.push('Type of rental is required');
+        if (!street) errors.push('Street address is required');
+        if (!barangay) errors.push('Barangay is required');
+        if (!city) errors.push('City is required');
+        if (!landlord_name) errors.push('Landlord name is required');
+        if (!contact_number) errors.push('Contact number is required');
+
+        // Validate Google Maps link if provided
+        if (google_maps_link && google_maps_link.trim() !== '') {
+            const cleanGoogleMapsLink = google_maps_link.startsWith('@') ? google_maps_link.substring(1) : google_maps_link;
+            if (!cleanGoogleMapsLink.includes('maps') || !cleanGoogleMapsLink.includes('goo.gl')) {
+                errors.push('Please provide a valid Google Maps link');
+            }
+            req.body.google_maps_link = cleanGoogleMapsLink;
+        }
+
+        // Clean up empty social media link
+        if (social_media_link && social_media_link.trim() === '') {
+            req.body.social_media_link = null;
+        }
+
+        if (errors.length > 0) {
+            return res.render('listings/edit', {
+                title: 'Edit Listing - Dwelly',
+                user: req.session.user,
+                listing: req.body,
+                errors,
+                formData: req.body
+            });
+        }
+
+        // Start a transaction
+        const connection = await pool.getConnection();
+        await connection.beginTransaction();
+
+        try {
+            // Update listing in database
+            await connection.query(
+                `UPDATE posts SET 
+                    type_id = ?, 
+                    street = ?, 
+                    barangay = ?, 
+                    city = ?, 
+                    landlord_name = ?, 
+                    contact_number = ?, 
+                    social_link = ?, 
+                    maps_link = ?, 
+                    description = ?, 
+                    price = ?
+                WHERE post_id = ? AND user_id = ?`,
+                [
+                    type_id, street, barangay, city,
+                    landlord_name, contact_number, social_media_link || null,
+                    req.body.google_maps_link || null, description || null, price || null,
+                    req.params.id, req.session.user.id
+                ]
+            );
+
+            // Handle new photos if uploaded
+            if (req.files && req.files.length > 0) {
+                // Delete old photos
+                await connection.query('DELETE FROM photos WHERE post_id = ?', [req.params.id]);
+                
+                // Insert new photos
+                for (const file of req.files) {
+                    await connection.query(
+                        'INSERT INTO photos (post_id, file_path) VALUES (?, ?)',
+                        [req.params.id, file.filename]
+                    );
+                }
+            }
+
+            // Commit transaction
+            await connection.commit();
+            connection.release();
+
+            // Set success message in session
+            req.session.success = 'Listing updated successfully';
+            
+            // Redirect to the listing
+            return res.redirect(`/listings/${req.params.id}`);
+        } catch (error) {
+            // Rollback transaction on error
+            await connection.rollback();
+            connection.release();
+            console.error('Database error:', error);
+            throw error;
+        }
+    } catch (error) {
+        console.error('Error updating listing:', error);
+        return res.render('listings/edit', {
+            title: 'Edit Listing - Dwelly',
+            user: req.session.user,
+            listing: req.body,
+            errors: [`An error occurred while updating the listing: ${error.message}`],
+            formData: req.body
+        });
+    }
+});
+
+// Delete a listing
+router.delete('/:id', isAuthenticated, async (req, res) => {
+    try {
+        // Check if user owns the listing
+        const [posts] = await pool.query(
+            'SELECT * FROM posts WHERE post_id = ? AND user_id = ?',
+            [req.params.id, req.session.user.id]
+        );
+
+        if (posts.length === 0) {
+            return res.status(403).json({ error: 'You do not have permission to delete this listing' });
+        }
+
+        // Delete the listing (photos will be deleted automatically due to ON DELETE CASCADE)
+        await pool.query('DELETE FROM posts WHERE post_id = ?', [req.params.id]);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting listing:', error);
+        res.status(500).json({ error: 'Failed to delete listing' });
     }
 });
 

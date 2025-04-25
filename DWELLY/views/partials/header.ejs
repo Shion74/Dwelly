@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <header class="main-header">
+        <div class="container">
+            <div class="logo">
+                <a href="/">
+                    <h1>Dwelly</h1>
+                </a>
+            </div>
+            <nav class="main-nav">
+                <ul>
+                    <li><a href="/">Home</a></li>
+                    <li><a href="/listings">Listings</a></li>
+                    <% if (user) { %>
+                        <li><a href="/listings/create">Post Listing</a></li>
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle">
+                                <i class="fas fa-user"></i> <%= user.full_name %>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a href="/users/profile">My Profile</a></li>
+                                <li><a href="/users/listings">My Listings</a></li>
+                                <li><a href="/users/favorites">Favorites</a></li>
+                                <li><a href="/users/ratings">My Ratings</a></li>
+                                <% if (user.role === 'admin') { %>
+                                    <li><a href="/admin">Admin Dashboard</a></li>
+                                <% } %>
+                                <li><a href="/auth/logout">Logout</a></li>
+                            </ul>
+                        </li>
+                    <% } else { %>
+                        <li><a href="/auth/login">Login</a></li>
+                        <li><a href="/auth/register" class="btn btn-primary">Register</a></li>
+                    <% } %>
+                </ul>
+            </nav>
+            <div class="mobile-menu-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+        </div>
+    </header>
+    <main class="main-content">
+        <div class="container">
+            <% if (typeof messages !== 'undefined' && messages.length > 0) { %>
+                <div class="alert-container">
+                    <% messages.forEach(function(message) { %>
+                        <div class="alert alert-<%= message.type %>">
+                            <%= message.text %>
+                            <button class="close-alert">&times;</button>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } %> 

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1 0 auto;
+        }
+        footer {
+            flex-shrink: 0;
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: auto;
+        }
+        .listings-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .listings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .listing-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease;
+        }
+        .listing-card:hover {
+            transform: translateY(-5px);
+        }
+        .listing-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+        }
+        .listing-content {
+            padding: 1.5rem;
+        }
+        .listing-title {
+            font-size: 1.25rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        .listing-type {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #e1f0ff;
+            color: #3498db;
+            border-radius: 15px;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        .listing-location {
+            color: #7f8c8d;
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+        }
+        .listing-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 1rem;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+        .listing-rating {
+            color: #f1c40f;
+        }
+        .listing-favorite {
+            color: #e74c3c;
+            cursor: pointer;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: #7f8c8d;
+        }
+        .empty-state h2 {
+            margin-bottom: 1rem;
+            color: #2c3e50;
+        }
+        .page-title {
+            text-align: center;
+            color: #2c3e50;
+            margin: 2rem 0;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <h1>Dwelly</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/favorites">Favorites</a>
+                <a href="/users/profile">Profile</a>
+                <a href="/auth/logout">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="listings-container">
+            <h1 class="page-title">My Favorite Listings</h1>
+            <% if (listings && listings.length > 0) { %>
+                <div class="listings-grid">
+                    <% listings.forEach(function(listing) { %>
+                        <div class="listing-card">
+                            <img src="<%= listing.photos && listing.photos[0] ? listing.photos[0].file_path : '/images/placeholder.jpg' %>" 
+                                 alt="<%= listing.type %>" 
+                                 class="listing-image">
+                            <div class="listing-content">
+                                <h3 class="listing-title"><%= listing.type %></h3>
+                                <span class="listing-type"><%= listing.type %></span>
+                                <p class="listing-location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <%= listing.city %>, <%= listing.barangay %>
+                                </p>
+                                <div class="listing-meta">
+                                    <div class="listing-rating">
+                                        <i class="fas fa-star"></i>
+                                        <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %>
+                                    </div>
+                                    <div class="listing-favorite" 
+                                         data-post-id="<%= listing.post_id %>"
+                                         onclick="toggleFavorite(this)">
+                                        <i class="fas fa-heart text-danger"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="empty-state">
+                    <h2>No Favorite Listings Yet</h2>
+                    <p>Start adding listings to your favorites!</p>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Dwelly. All rights reserved.</p>
+    </footer>
+
+    <script>
+        async function toggleFavorite(element) {
+            const postId = element.dataset.postId;
+            try {
+                const response = await fetch(`/listings/${postId}/favorite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    // Remove the listing card from the DOM
+                    element.closest('.listing-card').remove();
+                    
+                    // Check if there are no more listings
+                    const listingsGrid = document.querySelector('.listings-grid');
+                    if (!listingsGrid || listingsGrid.children.length === 0) {
+                        listingsGrid.remove();
+                        document.querySelector('.listings-container').innerHTML = `
+                            <h1 class="page-title">My Favorite Listings</h1>
+                            <div class="empty-state">
+                                <h2>No Favorite Listings Yet</h2>
+                                <p>Start adding listings to your favorites!</p>
+                            </div>
+                        `;
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
+            }
+        }
+    </script>
+</body>
+</html> 

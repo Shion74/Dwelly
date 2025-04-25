@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1 0 auto;
+        }
+        footer {
+            flex-shrink: 0;
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: auto;
+        }
+        .profile-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .profile-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .profile-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .profile-section {
+            margin-bottom: 1.5rem;
+        }
+        .profile-section:last-child {
+            margin-bottom: 0;
+        }
+        .profile-section h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .profile-field {
+            display: flex;
+            margin-bottom: 1rem;
+        }
+        .profile-label {
+            width: 150px;
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+        .profile-value {
+            flex: 1;
+            color: #2c3e50;
+        }
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .stat-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 1.5rem;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 0.5rem;
+        }
+        .stat-label {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        .edit-profile-btn {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 1rem;
+            transition: background 0.3s ease;
+        }
+        .edit-profile-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <h1>Dwelly</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/favorites">Favorites</a>
+                <a href="/users/profile">Profile</a>
+                <a href="/auth/logout">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="profile-container">
+            <div class="profile-header">
+                <h1>My Profile</h1>
+            </div>
+
+            <div class="profile-card">
+                <div class="profile-section">
+                    <h3>Personal Information</h3>
+                    <div class="profile-field">
+                        <div class="profile-label">Full Name</div>
+                        <div class="profile-value"><%= profileData.full_name %></div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-label">Email</div>
+                        <div class="profile-value"><%= profileData.email %></div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-label">Phone Number</div>
+                        <div class="profile-value"><%= profileData.phone_number || 'Not provided' %></div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-label">User Type</div>
+                        <div class="profile-value"><%= profileData.role === 'student' ? 'Student' : 'Landlord' %></div>
+                    </div>
+                </div>
+
+                <% if (profileData.role === 'student') { %>
+                <div class="profile-section">
+                    <h3>Academic Information</h3>
+                    <div class="profile-field">
+                        <div class="profile-label">ID Number</div>
+                        <div class="profile-value"><%= profileData.id_number || 'Not provided' %></div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-label">Year Level</div>
+                        <div class="profile-value"><%= profileData.year_level || 'Not provided' %></div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-label">Department</div>
+                        <div class="profile-value"><%= profileData.department_name || 'Not provided' %></div>
+                    </div>
+                    <div class="profile-field">
+                        <div class="profile-label">Course</div>
+                        <div class="profile-value"><%= profileData.course_name || 'Not provided' %></div>
+                    </div>
+                </div>
+                <% } %>
+
+                <div class="stats-container">
+                    <div class="stat-card">
+                        <div class="stat-value"><%= listingsCount %></div>
+                        <div class="stat-label">Listings Posted</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value"><%= favoritesCount %></div>
+                        <div class="stat-label">Favorite Listings</div>
+                    </div>
+                </div>
+
+                <div style="text-align: center;">
+                    <a href="/users/edit-profile" class="edit-profile-btn">Edit Profile</a>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Dwelly. All rights reserved.</p>
+    </footer>
+</body>
+</html> 

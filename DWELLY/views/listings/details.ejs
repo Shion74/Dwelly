@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .success-message {
+            background-color: #d4edda;
+            color: #155724;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 5px;
+            border: 1px solid #c3e6cb;
+        }
+        .listing-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .listing-header {
+            margin-bottom: 2rem;
+        }
+        .listing-title {
+            font-size: 2rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        .listing-meta {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+        }
+        .listing-content {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+        }
+        .listing-photos {
+            margin-bottom: 2rem;
+        }
+        .main-photo {
+            width: 100%;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+        }
+        .photo-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1rem;
+        }
+        .photo-thumbnail {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: opacity 0.3s ease;
+        }
+        .photo-thumbnail:hover {
+            opacity: 0.8;
+        }
+        .listing-info {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .info-section {
+            margin-bottom: 1.5rem;
+        }
+        .info-section:last-child {
+            margin-bottom: 0;
+        }
+        .info-section h3 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #eee;
+        }
+        .info-field {
+            display: flex;
+            margin-bottom: 0.5rem;
+        }
+        .info-label {
+            width: 120px;
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+        .info-value {
+            flex: 1;
+            color: #2c3e50;
+        }
+        .action-buttons {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <h1>Dwelly</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/favorites">Favorites</a>
+                <a href="/users/profile">Profile</a>
+                <a href="/auth/logout">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="listing-container">
+            <% if (success) { %>
+                <div class="success-message">
+                    <%= success %>
+                </div>
+            <% } %>
+
+            <div class="listing-header">
+                <h1 class="listing-title"><%= listing.type %></h1>
+                <div class="listing-meta">
+                    Posted by <%= listing.poster_name %> • 
+                    <%= new Date(listing.created_at).toLocaleDateString() %>
+                </div>
+            </div>
+
+            <div class="listing-content">
+                <div class="listing-main">
+                    <div class="listing-photos">
+                        <% if (photos && photos.length > 0) { %>
+                            <img src="<%= photos[0].file_path %>" alt="Main photo" class="main-photo">
+                            <div class="photo-grid">
+                                <% photos.forEach((photo, index) => { %>
+                                    <img src="<%= photo.file_path %>" alt="Photo <%= index + 1 %>" class="photo-thumbnail">
+                                <% }); %>
+                            </div>
+                        <% } else { %>
+                            <img src="/images/no-image.jpg" alt="No photo available" class="main-photo">
+                        <% } %>
+                    </div>
+
+                    <div class="listing-info">
+                        <div class="info-section">
+                            <h3>Description</h3>
+                            <p><%= listing.description || 'No description provided' %></p>
+                        </div>
+
+                        <div class="info-section">
+                            <h3>Location</h3>
+                            <div class="info-field">
+                                <div class="info-label">Street</div>
+                                <div class="info-value"><%= listing.street %></div>
+                            </div>
+                            <div class="info-field">
+                                <div class="info-label">Barangay</div>
+                                <div class="info-value"><%= listing.barangay %></div>
+                            </div>
+                            <div class="info-field">
+                                <div class="info-label">City</div>
+                                <div class="info-value"><%= listing.city %></div>
+                            </div>
+                        </div>
+
+                        <div class="info-section">
+                            <h3>Contact Information</h3>
+                            <div class="info-field">
+                                <div class="info-label">Landlord</div>
+                                <div class="info-value"><%= listing.landlord_name %></div>
+                            </div>
+                            <div class="info-field">
+                                <div class="info-label">Contact</div>
+                                <div class="info-value"><%= listing.contact_number %></div>
+                            </div>
+                            <% if (listing.social_link) { %>
+                                <div class="info-field">
+                                    <div class="info-label">Social Media</div>
+                                    <div class="info-value">
+                                        <a href="<%= listing.social_link %>" target="_blank">View Profile</a>
+                                    </div>
+                                </div>
+                            <% } %>
+                            <% if (listing.maps_link) { %>
+                                <div class="info-field">
+                                    <div class="info-label">Location</div>
+                                    <div class="info-value">
+                                        <a href="<%= listing.maps_link %>" target="_blank">View on Google Maps</a>
+                                    </div>
+                                </div>
+                            <% } %>
+                        </div>
+
+                        <% if (listing.price) { %>
+                            <div class="info-section">
+                                <h3>Price</h3>
+                                <div class="info-value">₱<%= listing.price.toLocaleString() %>/month</div>
+                            </div>
+                        <% } %>
+                    </div>
+                </div>
+
+                <div class="listing-sidebar">
+                    <div class="listing-info">
+                        <div class="info-section">
+                            <h3>Statistics</h3>
+                            <div class="info-field">
+                                <div class="info-label">Favorites</div>
+                                <div class="info-value"><%= listing.favorite_count || 0 %></div>
+                            </div>
+                            <div class="info-field">
+                                <div class="info-label">Rating</div>
+                                <div class="info-value">
+                                    <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %> / 5
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="action-buttons">
+                            <% if (user) { %>
+                                <button class="btn btn-primary" id="favoriteBtn" data-post-id="<%= listing.post_id %>">
+                                    <%= isFavorited ? 'Remove from Favorites' : 'Add to Favorites' %>
+                                </button>
+                                <% if (user.id === listing.user_id) { %>
+                                    <a href="/listings/<%= listing.post_id %>/edit" class="btn btn-secondary">Edit Listing</a>
+                                    <button class="btn btn-danger" id="deleteBtn" data-post-id="<%= listing.post_id %>">Delete Listing</button>
+                                <% } %>
+                            <% } else { %>
+                                <a href="/auth/login" class="btn btn-primary">Login to Interact</a>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Dwelly. All rights reserved.</p>
+    </footer>
+
+    <script>
+        // Favorite button functionality
+        document.getElementById('favoriteBtn')?.addEventListener('click', async function() {
+            try {
+                const response = await fetch(`/listings/${this.dataset.postId}/favorite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                const data = await response.json();
+                if (data.success) {
+                    this.textContent = data.action === 'added' ? 'Remove from Favorites' : 'Add to Favorites';
+                    location.reload();
+                }
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        });
+
+        // Delete button functionality
+        document.getElementById('deleteBtn')?.addEventListener('click', async function() {
+            if (confirm('Are you sure you want to delete this listing?')) {
+                try {
+                    const response = await fetch(`/listings/${this.dataset.postId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        window.location.href = '/listings';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        });
+
+        // Photo gallery functionality
+        const mainPhoto = document.querySelector('.main-photo');
+        const thumbnails = document.querySelectorAll('.photo-thumbnail');
+        
+        thumbnails.forEach(thumbnail => {
+            thumbnail.addEventListener('click', () => {
+                mainPhoto.src = thumbnail.src;
+            });
+        });
+    </script>
+</body>
+</html> 

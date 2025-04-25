@@ -8,7 +8,11 @@ const pool = mysql.createPool({
     database: process.env.DB_NAME || 'dwelly_db',
     waitForConnections: true,
     connectionLimit: 10,
-    queueLimit: 0
+    queueLimit: 0,
+    enableKeepAlive: true,
+    keepAliveInitialDelay: 0,
+    connectTimeout: 10000, // 10 seconds
+    dateStrings: true
 });
 
 // Initialize database tables
@@ -16,6 +20,39 @@ async function initializeDatabase() {
     try {
         const connection = await pool.getConnection();
         
+        // Create users table if it doesn't exist
+        await connection.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INT PRIMARY KEY AUTO_INCREMENT,
+                full_name VARCHAR(100) NOT NULL,
+                email VARCHAR(100) NOT NULL UNIQUE,
+                password VARCHAR(255) NOT NULL,
+                role ENUM('student', 'landlord') NOT NULL,
+                contact_number VARCHAR(20),
+                id_number VARCHAR(20),
+                year_level INT,
+                department_id INT,
+                course_id INT,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY (department_id) REFERENCES departments(department_id),
+                FOREIGN KEY (course_id) REFERENCES courses(course_id)
+            )
+        `);
+
+        // Add contact_number column if it doesn't exist
+        try {
+            await connection.query(`
+                ALTER TABLE users 
+                ADD COLUMN contact_number VARCHAR(20) DEFAULT NULL
+            `);
+            console.log('Contact number column added successfully');
+        } catch (error) {
+            // Ignore error if column already exists
+            if (!error.message.includes('Duplicate column name')) {
+                console.error('Error adding contact number column:', error);
+            }
+        }
+
         // Create posts table if it doesn't exist
         await connection.query(`
             CREATE TABLE IF NOT EXISTS posts (
@@ -27,8 +64,8 @@ async function initializeDatabase() {
                 city VARCHAR(100) NOT NULL,
                 landlord_name VARCHAR(100) NOT NULL,
                 contact_number VARCHAR(20) NOT NULL,
-                social_media_link VARCHAR(255),
-                google_maps_link VARCHAR(255),
+                social_link VARCHAR(255),
+                maps_link VARCHAR(255),
                 description TEXT,
                 price DECIMAL(10,2),
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -37,17 +74,17 @@ async function initializeDatabase() {
             )
         `);
 
-        // Add price column if it doesn't exist
+        // Add created_at column if it doesn't exist
         try {
             await connection.query(`
                 ALTER TABLE posts 
-                ADD COLUMN price DECIMAL(10,2) DEFAULT NULL
+                ADD COLUMN created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
             `);
-            console.log('Price column added successfully');
+            console.log('Created_at column added successfully');
         } catch (error) {
             // Ignore error if column already exists
             if (!error.message.includes('Duplicate column name')) {
-                console.error('Error adding price column:', error);
+                console.error('Error adding created_at column:', error);
             }
         }
 

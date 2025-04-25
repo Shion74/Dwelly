@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        .listings-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .listings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+        }
+        .listing-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            cursor: pointer;
+            position: relative;
+            height: 100%;
+        }
+        .listing-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .listing-photo {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #f5f6fa;
+        }
+        .listing-content {
+            padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            height: calc(100% - 200px); /* Subtract photo height */
+        }
+        .listing-title {
+            font-size: 1.25rem;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+        }
+        .listing-meta {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+        }
+        .listing-price {
+            font-size: 1.5rem;
+            color: #27ae60;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+        }
+        .listing-location {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .listing-stats {
+            display: flex;
+            gap: 1rem;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: auto;
+            padding-top: 1rem;
+            border-top: 1px solid #eee;
+        }
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .stat i {
+            color: #3498db;
+        }
+        .no-listings {
+            text-align: center;
+            padding: 3rem;
+            color: #7f8c8d;
+        }
+        .create-listing-btn {
+            display: inline-block;
+            background: #3498db;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            text-decoration: none;
+            margin-top: 1rem;
+            transition: background 0.3s ease;
+        }
+        .create-listing-btn:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <h1>Dwelly</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/favorites">Favorites</a>
+                <a href="/users/profile">Profile</a>
+                <a href="/auth/logout">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="listings-container">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+                <h1>All Listings</h1>
+                <% if (user) { %>
+                    <a href="/listings/create" class="create-listing-btn">Create Listing</a>
+                <% } %>
+            </div>
+
+            <% if (listings && listings.length > 0) { %>
+                <div class="listings-grid">
+                    <% listings.forEach(listing => { %>
+                        <a href="/listings/<%= listing.post_id %>" class="listing-card">
+                            <img src="<%= listing.photos && listing.photos.length > 0 ? listing.photos[0] : '/images/no-image.jpg' %>" 
+                                 alt="<%= listing.type %>" 
+                                 class="listing-photo"
+                                 onerror="this.src='/images/no-image.jpg'">
+                            <div class="listing-content">
+                                <div>
+                                    <h2 class="listing-title"><%= listing.type %></h2>
+                                    <div class="listing-meta">
+                                        Posted by <%= listing.poster_name %> • 
+                                        <%= new Date(listing.created_at).toLocaleDateString() %>
+                                    </div>
+                                    <% if (listing.price) { %>
+                                        <div class="listing-price">₱<%= listing.price.toLocaleString() %>/month</div>
+                                    <% } %>
+                                    <div class="listing-location">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <%= listing.barangay %>, <%= listing.city %>
+                                    </div>
+                                </div>
+                                <div class="listing-stats">
+                                    <div class="stat">
+                                        <i class="fas fa-heart"></i>
+                                        <%= listing.favorite_count || 0 %> favorites
+                                    </div>
+                                    <div class="stat">
+                                        <i class="fas fa-star"></i>
+                                        <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    <% }); %>
+                </div>
+            <% } else { %>
+                <div class="no-listings">
+                    <h2>No listings found</h2>
+                    <% if (user) { %>
+                        <p>Be the first to create a listing!</p>
+                        <a href="/listings/create" class="create-listing-btn">Create Listing</a>
+                    <% } else { %>
+                        <p>Please log in to create a listing.</p>
+                    <% } %>
+                </div>
+            <% } %>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Dwelly. All rights reserved.</p>
+    </footer>
+
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+</body>
+</html> 

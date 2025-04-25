@@ -5,6 +5,7 @@ const flash = require('connect-flash');
 const path = require('path');
 const cors = require('cors');
 const multer = require('multer');
+const fs = require('fs');
 
 const app = express();
 
@@ -12,7 +13,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve static files
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/uploads/listings', express.static(path.join(__dirname, 'public/uploads/listings')));
 
 // View engine setup
 app.set('view engine', 'ejs');
@@ -42,11 +46,16 @@ app.use((req, res, next) => {
 // Multer configuration for file uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        cb(null, 'public/uploads/');
+        const uploadDir = 'public/uploads/listings';
+        // Create directory if it doesn't exist
+        if (!fs.existsSync(uploadDir)) {
+            fs.mkdirSync(uploadDir, { recursive: true });
+        }
+        cb(null, uploadDir);
     },
     filename: function (req, file, cb) {
         const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+        cb(null, uniqueSuffix + path.extname(file.originalname));
     }
 });
 
@@ -110,7 +119,14 @@ app.use((req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const PORT = 3000;
+const server = app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
+}).on('error', (err) => {
+    if (err.code === 'EADDRINUSE') {
+        console.error(`Port ${PORT} is already in use. Please stop the other process using this port.`);
+        process.exit(1);
+    } else {
+        console.error('Server error:', err);
+    }
 }); 

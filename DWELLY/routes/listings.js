@@ -62,17 +62,23 @@ router.get('/', async (req, res) => {
             ORDER BY p.created_at DESC
         `);
 
+        // Process photos for each listing
+        const processedListings = listings.map(listing => ({
+            ...listing,
+            photos: listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : []
+        }));
+
         res.render('listings/index', {
             title: 'All Listings - Dwelly',
-            listings: listings.map(listing => ({
-                ...listing,
-                photos: listing.photos ? listing.photos.split(',') : []
-            })),
+            listings: processedListings,
             user: req.session.user
         });
     } catch (error) {
         console.error('Error fetching listings:', error);
-        res.status(500).json({ error: 'Failed to fetch listings' });
+        res.status(500).render('error', {
+            title: '500 - Server Error',
+            message: 'Error loading listings'
+        });
     }
 });
 
@@ -154,8 +160,8 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
                 `INSERT INTO posts (
                     user_id, type, street, barangay, city, 
                     landlord_name, contact_number, social_link, 
-                    maps_link, description, price, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+                    maps_link, description, price
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     req.session.user.id, type, street, barangay, city,
                     landlord_name, contact_number, social_media_link || null,
@@ -168,8 +174,8 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
             // Insert photos
             for (const file of req.files) {
                 await connection.query(
-                    'INSERT INTO photos (post_id, file_path, created_at) VALUES (?, ?, NOW())',
-                    [postId, `/uploads/listings/${file.filename}`]
+                    'INSERT INTO photos (post_id, file_path) VALUES (?, ?)',
+                    [postId, file.filename] // Store just the filename
                 );
             }
 
@@ -177,8 +183,11 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
             await connection.commit();
             connection.release();
 
-            req.flash('success', 'Listing created successfully');
-            res.redirect(`/listings/${postId}`);
+            // Set success message in session
+            req.session.success = 'Listing created successfully';
+            
+            // Redirect to the new listing
+            return res.redirect(`/listings/${postId}`);
         } catch (error) {
             // Rollback transaction on error
             await connection.rollback();
@@ -188,7 +197,8 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
         }
     } catch (error) {
         console.error('Error creating listing:', error);
-        res.render('listings/create', {
+        // If we get here, the listing was not created successfully
+        return res.render('listings/create', {
             title: 'Create Listing - Dwelly',
             user: req.session.user,
             errors: [`An error occurred while creating the listing: ${error.message}`],
@@ -201,7 +211,7 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
 router.get('/:id', async (req, res) => {
     try {
         const [listings] = await pool.query(`
-            SELECT p.*, u.full_name as owner_name,
+            SELECT p.*, u.full_name as poster_name,
                    (SELECT COUNT(*) FROM favorites WHERE post_id = p.post_id) as favorite_count,
                    (SELECT AVG(stars) FROM ratings WHERE post_id = p.post_id) as average_rating
             FROM posts p
@@ -218,11 +228,17 @@ router.get('/:id', async (req, res) => {
 
         const listing = listings[0];
 
-        // Get photos
+        // Get photos and format their paths
         const [photos] = await pool.query(
             'SELECT * FROM photos WHERE post_id = ? ORDER BY created_at ASC',
             [req.params.id]
         );
+
+        // Format photo paths
+        const formattedPhotos = photos.map(photo => ({
+            ...photo,
+            file_path: `/uploads/listings/${photo.file_path}`
+        }));
 
         // Check if user has favorited this listing
         let isFavorited = false;
@@ -234,12 +250,17 @@ router.get('/:id', async (req, res) => {
             isFavorited = favorites.length > 0;
         }
 
+        // Get success message from session and clear it
+        const success = req.session.success;
+        delete req.session.success;
+
         res.render('listings/details', {
             title: `${listing.type} - Dwelly`,
             user: req.session.user,
             listing,
-            photos,
-            isFavorited
+            photos: formattedPhotos,
+            isFavorited,
+            success
         });
     } catch (error) {
         console.error('Error fetching listing:', error);

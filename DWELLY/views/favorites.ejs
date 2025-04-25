@@ -126,9 +126,10 @@
                 <div class="listings-grid">
                     <% listings.forEach(function(listing) { %>
                         <div class="listing-card">
-                            <img src="<%= listing.photos && listing.photos[0] ? listing.photos[0].file_path : '/images/placeholder.jpg' %>" 
+                            <img src="<%= listing.photos && listing.photos.length > 0 ? listing.photos[0] : '/images/placeholder.jpg' %>" 
                                  alt="<%= listing.type %>" 
-                                 class="listing-image">
+                                 class="listing-image"
+                                 onerror="this.src='/images/placeholder.jpg'">
                             <div class="listing-content">
                                 <h3 class="listing-title"><%= listing.type %></h3>
                                 <span class="listing-type"><%= listing.type %></span>

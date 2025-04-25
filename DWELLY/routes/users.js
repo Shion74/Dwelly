@@ -61,22 +61,123 @@ router.get('/profile', isAuthenticated, async (req, res) => {
     }
 });
 
+// Get edit profile page
+router.get('/edit-profile', isAuthenticated, async (req, res) => {
+    try {
+        // Fetch user data
+        const [userData] = await pool.query(`
+            SELECT u.*, 
+                   d.name as department_name,
+                   c.name as course_name
+            FROM users u
+            LEFT JOIN departments d ON u.department_id = d.department_id
+            LEFT JOIN courses c ON u.course_id = c.course_id
+            WHERE u.user_id = ?
+        `, [req.session.user.id]);
+
+        if (userData.length === 0) {
+            return res.status(404).render('error', {
+                title: '404 - User Not Found',
+                message: 'User profile not found'
+            });
+        }
+
+        const user = userData[0];
+
+        // Fetch departments and courses for student users
+        let departments = [];
+        let courses = [];
+        if (user.role === 'student') {
+            [departments] = await pool.query('SELECT * FROM departments ORDER BY name');
+            [courses] = await pool.query('SELECT * FROM courses ORDER BY name');
+        }
+
+        res.render('users/edit-profile', {
+            title: 'Edit Profile - Dwelly',
+            user: req.session.user,
+            profileData: user,
+            departments,
+            courses,
+            error: req.query.error,
+            success: req.query.success
+        });
+    } catch (error) {
+        console.error('Error fetching edit profile page:', error);
+        res.status(500).render('error', {
+            title: '500 - Server Error',
+            message: 'Error loading edit profile page'
+        });
+    }
+});
+
 // Update user profile
 router.post('/profile', isAuthenticated, async (req, res) => {
     try {
-        const { full_name, email, contact_number } = req.body;
+        const {
+            full_name,
+            email,
+            contact_number,
+            id_number,
+            year_level,
+            department_id,
+            course_id
+        } = req.body;
 
-        await pool.query(
-            `UPDATE users 
-             SET full_name = ?, email = ?, contact_number = ?
-             WHERE user_id = ?`,
-            [full_name, email, contact_number, req.session.user.id]
+        // Validate required fields
+        if (!full_name || !email) {
+            return res.redirect('/users/edit-profile?error=Full name and email are required');
+        }
+
+        // Validate email format
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            return res.redirect('/users/edit-profile?error=Invalid email format');
+        }
+
+        // Check if email is already taken by another user
+        const [existingUser] = await pool.query(
+            'SELECT user_id FROM users WHERE email = ? AND user_id != ?',
+            [email, req.session.user.id]
         );
 
-        res.redirect('/users/profile');
+        if (existingUser.length > 0) {
+            return res.redirect('/users/edit-profile?error=Email is already taken');
+        }
+
+        // Update user profile
+        await pool.query(
+            `UPDATE users 
+             SET full_name = ?,
+                 email = ?,
+                 contact_number = ?,
+                 id_number = ?,
+                 year_level = ?,
+                 department_id = ?,
+                 course_id = ?
+             WHERE user_id = ?`,
+            [
+                full_name,
+                email,
+                contact_number || null,
+                id_number || null,
+                year_level || null,
+                department_id || null,
+                course_id || null,
+                req.session.user.id
+            ]
+        );
+
+        // Update session user data
+        req.session.user = {
+            ...req.session.user,
+            full_name,
+            email
+        };
+
+        res.redirect('/users/profile?success=Profile updated successfully');
     } catch (error) {
         console.error('Error updating profile:', error);
-        res.status(500).json({ error: 'Failed to update profile' });
+        res.redirect('/users/edit-profile?error=Failed to update profile');
     }
 });
 
@@ -102,7 +203,7 @@ router.get('/listings', isAuthenticated, async (req, res) => {
             title: 'My Listings - Dwelly',
             listings: listings.map(listing => ({
                 ...listing,
-                photos: listing.photos ? listing.photos.split(',') : []
+                photos: listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : []
             })),
             user: req.session.user
         });

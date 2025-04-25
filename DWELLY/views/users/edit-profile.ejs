@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Profile - Dwelly</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1 0 auto;
+        }
+        footer {
+            flex-shrink: 0;
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: auto;
+        }
+        .edit-profile-container {
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        .edit-profile-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .edit-profile-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #2c3e50;
+            font-weight: bold;
+        }
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        .error-message {
+            color: #e74c3c;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .success-message {
+            color: #2ecc71;
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+        }
+        .button-group {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <h1>Dwelly</h1>
+            </div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/favorites">Favorites</a>
+                <a href="/users/profile">Profile</a>
+                <a href="/auth/logout">Logout</a>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <div class="edit-profile-container">
+            <div class="edit-profile-header">
+                <h1>Edit Profile</h1>
+            </div>
+
+            <div class="edit-profile-card">
+                <% if (error) { %>
+                    <div class="error-message"><%= error %></div>
+                <% } %>
+                <% if (success) { %>
+                    <div class="success-message"><%= success %></div>
+                <% } %>
+
+                <form action="/users/profile" method="POST">
+                    <div class="form-group">
+                        <label for="full_name">Full Name</label>
+                        <input type="text" id="full_name" name="full_name" value="<%= profileData.full_name %>" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" value="<%= profileData.email %>" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="contact_number">Phone Number</label>
+                        <input type="tel" id="contact_number" name="contact_number" value="<%= profileData.contact_number || '' %>">
+                    </div>
+
+                    <% if (profileData.role === 'student') { %>
+                        <div class="form-group">
+                            <label for="id_number">ID Number</label>
+                            <input type="text" id="id_number" name="id_number" value="<%= profileData.id_number || '' %>">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="year_level">Year Level</label>
+                            <select id="year_level" name="year_level">
+                                <option value="">Select Year Level</option>
+                                <% for(let i = 1; i <= 5; i++) { %>
+                                    <option value="<%= i %>" <%= profileData.year_level == i ? 'selected' : '' %>><%= i %></option>
+                                <% } %>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="department_id">Department</label>
+                            <select id="department_id" name="department_id">
+                                <option value="">Select Department</option>
+                                <% departments.forEach(dept => { %>
+                                    <option value="<%= dept.department_id %>" <%= profileData.department_id == dept.department_id ? 'selected' : '' %>>
+                                        <%= dept.name %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="course_id">Course</label>
+                            <select id="course_id" name="course_id">
+                                <option value="">Select Course</option>
+                                <% courses.forEach(course => { %>
+                                    <option value="<%= course.course_id %>" <%= profileData.course_id == course.course_id ? 'selected' : '' %>>
+                                        <%= course.name %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                    <% } %>
+
+                    <div class="button-group">
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <a href="/users/profile" class="btn btn-secondary">Cancel</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <p>&copy; 2024 Dwelly. All rights reserved.</p>
+    </footer>
+</body>
+</html> 

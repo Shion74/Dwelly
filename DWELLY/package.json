@@ -5,7 +5,8 @@
   "main": "app.js",
   "scripts": {
     "start": "node app.js",
-    "dev": "nodemon app.js"
+    "dev": "nodemon app.js",
+    "watch": "nodemon --watch routes --watch views --watch public --watch config --watch app.js app.js"
   },
   "keywords": [
     "housing",

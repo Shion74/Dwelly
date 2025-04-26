@@ -412,10 +412,15 @@ router.post('/:id/report', isAuthenticated, async (req, res) => {
 // Get edit listing page
 router.get('/:id/edit', isAuthenticated, async (req, res) => {
     try {
+        // Get room types for the dropdown
+        const [roomTypes] = await pool.query('SELECT * FROM room_types ORDER BY display_name');
+
         const [listings] = await pool.query(`
-            SELECT p.*, GROUP_CONCAT(ph.file_path) as photos
+            SELECT p.*, GROUP_CONCAT(ph.file_path) as photos,
+                   rt.type_name, rt.display_name as type_display
             FROM posts p
             LEFT JOIN photos ph ON p.post_id = ph.post_id
+            LEFT JOIN room_types rt ON p.type_id = rt.type_id
             WHERE p.post_id = ? AND p.user_id = ?
             GROUP BY p.post_id
         `, [req.params.id, req.session.user.id]);
@@ -429,13 +434,20 @@ router.get('/:id/edit', isAuthenticated, async (req, res) => {
 
         const listing = listings[0];
         listing.photos = listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : [];
+        
+        // Ensure maps_link is included in formData
+        const formData = {
+            ...listing,
+            google_maps_link: listing.maps_link || ''
+        };
 
         res.render('listings/edit', {
             title: 'Edit Listing - Dwelly',
             user: req.session.user,
             listing,
             errors: [],
-            formData: listing
+            formData,
+            roomTypes
         });
     } catch (error) {
         console.error('Error fetching listing for edit:', error);
@@ -486,12 +498,14 @@ router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req,
         }
 
         if (errors.length > 0) {
+            const [roomTypes] = await pool.query('SELECT * FROM room_types ORDER BY display_name');
             return res.render('listings/edit', {
                 title: 'Edit Listing - Dwelly',
                 user: req.session.user,
                 listing: req.body,
                 errors,
-                formData: req.body
+                formData: req.body,
+                roomTypes
             });
         }
 
@@ -516,8 +530,10 @@ router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req,
                 WHERE post_id = ? AND user_id = ?`,
                 [
                     type_id, street, barangay, city,
-                    landlord_name, contact_number, social_media_link || null,
-                    req.body.google_maps_link || null, description || null, price || null,
+                    landlord_name, contact_number, 
+                    social_media_link || null,
+                    google_maps_link || null, 
+                    description || null, price || null,
                     req.params.id, req.session.user.id
                 ]
             );
@@ -554,12 +570,14 @@ router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req,
         }
     } catch (error) {
         console.error('Error updating listing:', error);
+        const [roomTypes] = await pool.query('SELECT * FROM room_types ORDER BY display_name');
         return res.render('listings/edit', {
             title: 'Edit Listing - Dwelly',
             user: req.session.user,
             listing: req.body,
             errors: [`An error occurred while updating the listing: ${error.message}`],
-            formData: req.body
+            formData: req.body,
+            roomTypes
         });
     }
 });

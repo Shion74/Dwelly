@@ -45,61 +45,102 @@
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             overflow: hidden;
-            transition: transform 0.3s ease;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            text-decoration: none;
+            color: inherit;
+            display: block;
+            cursor: pointer;
+            position: relative;
+            height: 100%;
         }
         .listing-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
-        .listing-image {
+        .listing-photo-container {
+            position: relative;
             width: 100%;
             height: 200px;
+            background-color: #f5f6fa;
+            overflow: hidden;
+        }
+        .listing-photo {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        .listing-photo.loaded {
+            opacity: 1;
+        }
+        .photo-placeholder {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #f5f6fa;
+            color: #95a5a6;
+        }
+        .photo-placeholder i {
+            font-size: 2rem;
         }
         .listing-content {
             padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            height: calc(100% - 200px);
         }
         .listing-title {
             font-size: 1.25rem;
             color: #2c3e50;
             margin-bottom: 0.5rem;
+            font-weight: bold;
         }
-        .listing-type {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            background: #e1f0ff;
-            color: #3498db;
-            border-radius: 15px;
-            font-size: 0.875rem;
+        .listing-meta {
+            color: #7f8c8d;
+            font-size: 0.9rem;
             margin-bottom: 1rem;
+        }
+        .listing-price {
+            font-size: 1.5rem;
+            color: #27ae60;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
         }
         .listing-location {
             color: #7f8c8d;
-            font-size: 0.875rem;
+            font-size: 0.9rem;
             margin-bottom: 1rem;
-        }
-        .listing-meta {
             display: flex;
-            justify-content: space-between;
             align-items: center;
-            margin-top: 1rem;
+            gap: 0.5rem;
+        }
+        .listing-stats {
+            display: flex;
+            gap: 1rem;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: auto;
             padding-top: 1rem;
             border-top: 1px solid #eee;
         }
-        .listing-rating {
-            color: #f1c40f;
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
-        .listing-favorite {
-            color: #e74c3c;
-            cursor: pointer;
+        .stat i {
+            color: #3498db;
         }
         .empty-state {
             text-align: center;
-            padding: 4rem 2rem;
+            padding: 3rem;
             color: #7f8c8d;
-        }
-        .empty-state h2 {
-            margin-bottom: 1rem;
-            color: #2c3e50;
         }
         .page-title {
             text-align: center;
@@ -129,39 +170,50 @@
             <% if (listings && listings.length > 0) { %>
                 <div class="listings-grid">
                     <% listings.forEach(function(listing) { %>
-                        <div class="listing-card">
-                            <a href="/listings/<%= listing.post_id %>">
-                                <img src="<%= listing.photos && listing.photos.length > 0 ? listing.photos[0] : '/images/placeholder.jpg' %>" 
-                                     alt="<%= listing.type %>" 
-                                     class="listing-image"
-                                     onerror="this.src='/images/placeholder.jpg'">
-                                <div class="listing-content">
-                                    <h3 class="listing-title"><%= listing.type %></h3>
-                                    <span class="listing-type"><%= listing.type %></span>
-                                    <p class="listing-location">
-                                        <i class="fas fa-map-marker-alt"></i>
-                                        <%= listing.city %>, <%= listing.barangay %>
-                                    </p>
-                                    <% if (listing.price) { %>
-                                        <p class="listing-price">₱<%= listing.price.toLocaleString() %>/month</p>
-                                    <% } %>
+                        <a href="/listings/<%= listing.post_id %>" class="listing-card">
+                            <div class="listing-photo-container">
+                                <% if (listing.photos && listing.photos.length > 0) { %>
+                                    <img src="<%= listing.photos[0] %>" 
+                                         alt="<%= listing.type %>" 
+                                         class="listing-photo"
+                                         onload="this.classList.add('loaded')"
+                                         onerror="this.src='/images/no-image.jpg'; this.classList.add('loaded')">
+                                <% } else { %>
+                                    <div class="photo-placeholder">
+                                        <i class="fas fa-home"></i>
+                                    </div>
+                                <% } %>
+                            </div>
+                            <div class="listing-content">
+                                <div>
+                                    <h2 class="listing-title"><%= listing.type %></h2>
                                     <div class="listing-meta">
-                                        <div class="listing-rating">
-                                            <i class="fas fa-star"></i>
-                                            <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %>
-                                            <% if (listing.rating_count > 0) { %>
-                                                (<%= listing.rating_count %>)
-                                            <% } %>
-                                        </div>
-                                        <div class="listing-favorite" 
-                                             data-post-id="<%= listing.post_id %>"
-                                             onclick="toggleFavorite(this)">
-                                            <i class="fas fa-bookmark"></i>
-                                        </div>
+                                        Posted by <%= listing.owner_name %> • 
+                                        <%= new Date(listing.created_at).toLocaleDateString() %>
+                                    </div>
+                                    <% if (listing.price) { %>
+                                        <div class="listing-price">₱<%= listing.price.toLocaleString() %>/month</div>
+                                    <% } %>
+                                    <div class="listing-location">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <%= listing.barangay %>, <%= listing.city %>
                                     </div>
                                 </div>
-                            </a>
-                        </div>
+                                <div class="listing-stats">
+                                    <div class="stat">
+                                        <i class="fas fa-bookmark"></i>
+                                        <%= listing.favorite_count %> favorites
+                                    </div>
+                                    <div class="stat">
+                                        <i class="fas fa-star"></i>
+                                        <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %>
+                                        <% if (listing.rating_count > 0) { %>
+                                            (<%= listing.rating_count %>)
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
                     <% }); %>
                 </div>
             <% } else { %>
@@ -176,39 +228,5 @@
     <footer>
         <p>&copy; 2024 Dwelly. All rights reserved.</p>
     </footer>
-
-    <script>
-        async function toggleFavorite(element) {
-            const postId = element.dataset.postId;
-            try {
-                const response = await fetch(`/listings/${postId}/favorite`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    // Remove the listing card from the DOM
-                    element.closest('.listing-card').remove();
-                    
-                    // Check if there are no more listings
-                    const listingsGrid = document.querySelector('.listings-grid');
-                    if (!listingsGrid || listingsGrid.children.length === 0) {
-                        listingsGrid.remove();
-                        document.querySelector('.listings-container').innerHTML = `
-                            <h1 class="page-title">My Favorite Listings</h1>
-                            <div class="empty-state">
-                                <h2>No Favorite Listings Yet</h2>
-                                <p>Start adding listings to your favorites!</p>
-                            </div>
-                        `;
-                    }
-                }
-            } catch (error) {
-                console.error('Error toggling favorite:', error);
-            }
-        }
-    </script>
 </body>
 </html> 

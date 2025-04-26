@@ -125,6 +125,12 @@
                 <h1>My Profile</h1>
             </div>
 
+            <% if (success) { %>
+                <div class="success-message" style="background: #d4edda; color: #155724; padding: 1rem; border-radius: 5px; margin-bottom: 1rem;">
+                    <%= success %>
+                </div>
+            <% } %>
+
             <div class="profile-card">
                 <div class="profile-section">
                     <h3>Personal Information</h3>
@@ -138,7 +144,7 @@
                     </div>
                     <div class="profile-field">
                         <div class="profile-label">Phone Number</div>
-                        <div class="profile-value"><%= profileData.contact_number || 'Not provided' %></div>
+                        <div class="profile-value"><%= profileData.phone_number || 'Not provided' %></div>
                     </div>
                     <div class="profile-field">
                         <div class="profile-label">User Type</div>

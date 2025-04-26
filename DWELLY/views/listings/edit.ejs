@@ -6,47 +6,70 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1 0 auto;
+            padding-bottom: 2rem;
+        }
+        footer {
+            flex-shrink: 0;
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: auto;
+            width: 100%;
+            position: relative;
+            bottom: 0;
+        }
         .form-container {
             max-width: 800px;
             margin: 2rem auto;
-            padding: 2rem;
+            padding: 0 2rem;
+        }
+        .form-header {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .form-card {
             background: white;
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        }
-        .form-header {
+            padding: 2rem;
             margin-bottom: 2rem;
-            text-align: center;
-        }
-        .form-header h1 {
-            color: #2c3e50;
-            margin-bottom: 0.5rem;
-        }
-        .form-header p {
-            color: #7f8c8d;
         }
         .form-section {
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
+        }
+        .form-section:last-child {
+            margin-bottom: 0;
         }
         .form-section h3 {
             color: #2c3e50;
             margin-bottom: 1rem;
             padding-bottom: 0.5rem;
-            border-bottom: 2px solid #eee;
+            border-bottom: 1px solid #eee;
         }
         .form-group {
-            margin-bottom: 1rem;
+            margin-bottom: 1.5rem;
         }
         .form-label {
             display: block;
             margin-bottom: 0.5rem;
+            font-weight: bold;
             color: #2c3e50;
-            font-weight: 500;
         }
         .form-label.required::after {
-            content: '*';
+            content: " *";
             color: #e74c3c;
-            margin-left: 0.25rem;
         }
         .form-control {
             width: 100%;
@@ -54,11 +77,60 @@
             border: 1px solid #ddd;
             border-radius: 5px;
             font-size: 1rem;
+            transition: border-color 0.3s ease;
         }
         .form-control:focus {
-            outline: none;
             border-color: #3498db;
-            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
+            outline: none;
+        }
+        .form-text {
+            font-size: 0.875rem;
+            color: #7f8c8d;
+            margin-top: 0.25rem;
+        }
+        .photo-upload {
+            border: 2px dashed #ddd;
+            border-radius: 5px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 1rem;
+            cursor: pointer;
+            transition: border-color 0.3s ease;
+        }
+        .photo-upload:hover {
+            border-color: #3498db;
+        }
+        .photo-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        .photo-item {
+            position: relative;
+            height: 150px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+        .photo-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .photo-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(0,0,0,0.5);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
         }
         .btn {
             display: inline-block;
@@ -98,25 +170,10 @@
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
-        .current-photos {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 1rem;
-            margin-bottom: 1rem;
-        }
-        .photo-preview {
-            position: relative;
-            width: 100%;
-            padding-bottom: 100%;
-        }
-        .photo-preview img {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            border-radius: 5px;
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
         }
     </style>
 </head>
@@ -144,7 +201,7 @@
 
             <% if (errors && errors.length > 0) { %>
                 <div class="alert alert-danger">
-                    <ul>
+                    <ul style="margin: 0; padding-left: 1rem;">
                         <% errors.forEach(function(error) { %>
                             <li><%= error %></li>
                         <% }); %>
@@ -152,84 +209,114 @@
                 </div>
             <% } %>
 
-            <form action="/listings/<%= listing.post_id %>/edit" method="POST" enctype="multipart/form-data">
-                <div class="form-section">
-                    <h3>Basic Information</h3>
-                    <div class="form-group">
-                        <label class="form-label required" for="type">Type of Rental</label>
-                        <input type="text" class="form-control" id="type" name="type" required value="<%= formData.type %>">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required" for="landlord_name">Landlord Name</label>
-                        <input type="text" class="form-control" id="landlord_name" name="landlord_name" required value="<%= formData.landlord_name %>">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required" for="contact_number">Contact Number</label>
-                        <input type="tel" class="form-control" id="contact_number" name="contact_number" required value="<%= formData.contact_number %>">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="social_media_link">Social Media Link</label>
-                        <input type="url" class="form-control" id="social_media_link" name="social_media_link" value="<%= formData.social_link || '' %>">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="google_maps_link">Google Maps Link</label>
-                        <input type="url" class="form-control" id="google_maps_link" name="google_maps_link" value="<%= formData.maps_link || '' %>">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="price">Price per Month (₱)</label>
-                        <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" value="<%= formData.price || '' %>">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label" for="description">Description</label>
-                        <textarea class="form-control" id="description" name="description" rows="4" placeholder="Describe the property, amenities, rules, etc."><%= formData.description || '' %></textarea>
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>Location</h3>
-                    <div class="form-group">
-                        <label class="form-label required" for="street">Street Address</label>
-                        <input type="text" class="form-control" id="street" name="street" required value="<%= formData.street %>">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required" for="barangay">Barangay</label>
-                        <input type="text" class="form-control" id="barangay" name="barangay" required value="<%= formData.barangay %>">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label required" for="city">City</label>
-                        <input type="text" class="form-control" id="city" name="city" required value="<%= formData.city %>">
-                    </div>
-                </div>
-
-                <div class="form-section">
-                    <h3>Photos</h3>
-                    <% if (listing.photos && listing.photos.length > 0) { %>
-                        <div class="current-photos">
-                            <% listing.photos.forEach(function(photo) { %>
-                                <div class="photo-preview">
-                                    <img src="<%= photo %>" alt="Current photo">
-                                </div>
-                            <% }); %>
+            <form action="/listings/<%= listing.post_id %>/edit" method="POST" enctype="multipart/form-data" id="listingForm">
+                <div class="form-card">
+                    <div class="form-section">
+                        <h3>Photos</h3>
+                        <div class="form-group">
+                            <label class="form-label">Current Photos</label>
+                            <div class="photo-preview">
+                                <% if (listing.photos && listing.photos.length > 0) { %>
+                                    <% listing.photos.forEach(function(photo) { %>
+                                        <div class="photo-item">
+                                            <img src="<%= photo %>" alt="Current photo">
+                                        </div>
+                                    <% }); %>
+                                <% } %>
+                            </div>
+                            <div class="form-text">Upload new photos to replace the current ones. Leave empty to keep current photos.</div>
                         </div>
-                    <% } %>
-                    <div class="form-group">
-                        <label class="form-label" for="photos">Update Photos (Optional)</label>
-                        <input type="file" class="form-control" id="photos" name="photos" multiple accept="image/*">
-                        <small class="form-text text-muted">Upload new photos to replace the current ones. Leave empty to keep current photos.</small>
+                        <div class="form-group">
+                            <label class="form-label">Upload New Photos (Optional)</label>
+                            <div class="photo-upload" id="photoUpload">
+                                <p>Click to select photos or drag and drop</p>
+                                <input type="file" name="photos" id="photos" multiple accept="image/*" style="display: none;">
+                            </div>
+                            <div class="photo-preview" id="photoPreview"></div>
+                            <div class="form-text">Upload between 2 and 6 photos of your property. Supported formats: JPG, PNG, WebP. Max size: 5MB per image.</div>
+                        </div>
                     </div>
-                </div>
 
-                <div class="form-actions">
-                    <a href="/listings/<%= listing.post_id %>" class="btn btn-secondary">Cancel</a>
-                    <button type="submit" class="btn btn-primary">Update Listing</button>
+                    <div class="form-section">
+                        <h3>Property Details</h3>
+                        <div class="form-group">
+                            <label class="form-label required" for="type_id">Type of Rental</label>
+                            <select class="form-control" id="type_id" name="type_id" required>
+                                <option value="">Select a type</option>
+                                <% roomTypes.forEach(function(type) { %>
+                                    <option value="<%= type.type_id %>" <%= formData.type_id == type.type_id ? 'selected' : '' %>>
+                                        <%= type.display_name %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="price">Monthly Rent (PHP)</label>
+                            <input type="number" class="form-control" id="price" name="price" min="0" step="0.01" value="<%= formData.price || '' %>">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required" for="street">Street Address</label>
+                            <input type="text" class="form-control" id="street" name="street" required value="<%= formData.street %>">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="building_name">Building Name (if applicable)</label>
+                            <input type="text" class="form-control" id="building_name" name="building_name" value="<%= formData.building_name || '' %>">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="unit_number">Unit Number (if applicable)</label>
+                            <input type="text" class="form-control" id="unit_number" name="unit_number" value="<%= formData.unit_number || '' %>">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required" for="barangay">Barangay</label>
+                            <input type="text" class="form-control" id="barangay" name="barangay" required value="<%= formData.barangay %>">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required" for="city">City</label>
+                            <input type="text" class="form-control" id="city" name="city" required value="<%= listing.city %>" readonly>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="description">Description</label>
+                            <textarea class="form-control" id="description" name="description" rows="4"><%= listing.description %></textarea>
+                            <div class="form-text">Describe the property, its features, and any important details potential tenants should know.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Contact Information</h3>
+                        <div class="form-group">
+                            <label class="form-label required" for="landlord_name">Landlord Full Name</label>
+                            <input type="text" class="form-control" id="landlord_name" name="landlord_name" required value="<%= formData.landlord_name %>">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required" for="contact_number">Contact Number</label>
+                            <input type="tel" class="form-control" id="contact_number" name="contact_number" required value="<%= formData.contact_number %>">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="social_media_link">Social Media Link (Optional)</label>
+                            <input type="url" class="form-control" id="social_media_link" name="social_media_link" placeholder="https://facebook.com/..." value="<%= formData.social_link || '' %>">
+                            <div class="form-text">Add a link to your Facebook, Instagram, or other social media profile.</div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="google_maps_link">Google Maps Link (Optional)</label>
+                            <input type="url" class="form-control" id="google_maps_link" name="google_maps_link" placeholder="https://maps.google.com/..." value="<%= formData.google_maps_link || '' %>">
+                            <div class="form-text">Add a link to the property's location on Google Maps.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="/listings/<%= listing.post_id %>" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Update Listing</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -238,5 +325,90 @@
     <footer>
         <p>&copy; 2024 Dwelly. All rights reserved.</p>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const photoUpload = document.getElementById('photoUpload');
+            const photosInput = document.getElementById('photos');
+            const photoPreview = document.getElementById('photoPreview');
+            const listingForm = document.getElementById('listingForm');
+            
+            // Handle photo upload click
+            photoUpload.addEventListener('click', function() {
+                photosInput.click();
+            });
+            
+            // Handle drag and drop
+            photoUpload.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                photoUpload.style.borderColor = '#3498db';
+            });
+            
+            photoUpload.addEventListener('dragleave', function() {
+                photoUpload.style.borderColor = '#ddd';
+            });
+            
+            photoUpload.addEventListener('drop', function(e) {
+                e.preventDefault();
+                photoUpload.style.borderColor = '#ddd';
+                
+                if (e.dataTransfer.files.length) {
+                    photosInput.files = e.dataTransfer.files;
+                    updatePhotoPreview();
+                }
+            });
+            
+            // Handle file selection
+            photosInput.addEventListener('change', updatePhotoPreview);
+            
+            // Update photo preview
+            function updatePhotoPreview() {
+                photoPreview.innerHTML = '';
+                
+                if (photosInput.files.length > 6) {
+                    alert('You can only upload a maximum of 6 photos');
+                    photosInput.value = '';
+                    return;
+                }
+                
+                for (let i = 0; i < photosInput.files.length; i++) {
+                    const file = photosInput.files[i];
+                    const reader = new FileReader();
+                    
+                    reader.onload = function(e) {
+                        const photoItem = document.createElement('div');
+                        photoItem.className = 'photo-item';
+                        
+                        const img = document.createElement('img');
+                        img.src = e.target.result;
+                        
+                        const removeBtn = document.createElement('button');
+                        removeBtn.className = 'photo-remove';
+                        removeBtn.innerHTML = '&times;';
+                        removeBtn.addEventListener('click', function() {
+                            // Create a new FileList without this file
+                            const dt = new DataTransfer();
+                            const { files } = photosInput;
+                            
+                            for (let j = 0; j < files.length; j++) {
+                                if (j !== i) {
+                                    dt.items.add(files[j]);
+                                }
+                            }
+                            
+                            photosInput.files = dt.files;
+                            updatePhotoPreview();
+                        });
+                        
+                        photoItem.appendChild(img);
+                        photoItem.appendChild(removeBtn);
+                        photoPreview.appendChild(photoItem);
+                    };
+                    
+                    reader.readAsDataURL(file);
+                }
+            }
+        });
+    </script>
 </body>
 </html> 

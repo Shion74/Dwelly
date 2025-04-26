@@ -45,12 +45,17 @@ router.get('/profile', isAuthenticated, async (req, res) => {
             [req.session.user.id]
         );
 
+        // Get success message from session and clear it
+        const success = req.query.success;
+        delete req.query.success;
+
         res.render('users/profile', {
             title: 'My Profile - Dwelly',
             user: req.session.user,
             profileData: user,
             listingsCount: listingsCount[0].count,
-            favoritesCount: favoritesCount[0].count
+            favoritesCount: favoritesCount[0].count,
+            success
         });
     } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -149,7 +154,7 @@ router.post('/profile', isAuthenticated, async (req, res) => {
             `UPDATE users 
              SET full_name = ?,
                  email = ?,
-                 contact_number = ?,
+                 phone_number = ?,
                  id_number = ?,
                  year_level = ?,
                  department_id = ?,
@@ -174,10 +179,11 @@ router.post('/profile', isAuthenticated, async (req, res) => {
             email
         };
 
+        // Redirect with success message
         res.redirect('/users/profile?success=Profile updated successfully');
     } catch (error) {
         console.error('Error updating profile:', error);
-        res.redirect('/users/edit-profile?error=Failed to update profile');
+        res.redirect('/users/edit-profile?error=Failed to update profile. Please try again.');
     }
 });
 

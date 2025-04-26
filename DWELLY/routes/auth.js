@@ -37,7 +37,7 @@ router.get('/register', async (req, res) => {
 // Register handler
 router.post('/register', async (req, res) => {
     try {
-        const { full_name, id_number, role, year_level, department_id, course_id, email, password } = req.body;
+        const { full_name, id_number, role, year_level, department_id, course_id, email, password, phone_number } = req.body;
 
         // Check if user already exists
         const [existingUsers] = await pool.query(
@@ -55,9 +55,9 @@ router.post('/register', async (req, res) => {
 
         // Insert new user
         const [result] = await pool.query(
-            `INSERT INTO users (full_name, id_number, role, year_level, department_id, course_id, email, password)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-            [full_name, id_number, role, year_level || null, department_id || null, course_id || null, email, hashedPassword]
+            `INSERT INTO users (full_name, id_number, role, year_level, department_id, course_id, email, password, phone_number)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [full_name, id_number, role, year_level || null, department_id || null, course_id || null, email, hashedPassword, phone_number]
         );
 
         req.flash('success', 'Registration successful! Please login.');
@@ -71,6 +71,10 @@ router.post('/register', async (req, res) => {
 
 // Login page
 router.get('/login', (req, res) => {
+    // If user is already logged in, redirect to home
+    if (req.session.user) {
+        return res.redirect('/');
+    }
     res.render('auth/login', { 
         title: 'Login - Dwelly',
         user: req.session.user 
@@ -89,20 +93,23 @@ router.post('/login', async (req, res) => {
         );
 
         if (users.length === 0) {
-            return res.status(400).json({ error: 'Invalid credentials' });
+            req.flash('error', 'Invalid credentials');
+            return res.redirect('/auth/login');
         }
 
         const user = users[0];
 
         // Check if user is blocked
         if (user.is_blocked) {
-            return res.status(403).json({ error: 'Account has been blocked' });
+            req.flash('error', 'Account has been blocked');
+            return res.redirect('/auth/login');
         }
 
         // Verify password
         const validPassword = await bcrypt.compare(password, user.password);
         if (!validPassword) {
-            return res.status(400).json({ error: 'Invalid credentials' });
+            req.flash('error', 'Invalid credentials');
+            return res.redirect('/auth/login');
         }
 
         // Set session
@@ -116,7 +123,8 @@ router.post('/login', async (req, res) => {
         res.redirect('/');
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ error: 'Login failed' });
+        req.flash('error', 'Login failed. Please try again.');
+        res.redirect('/auth/login');
     }
 });
 

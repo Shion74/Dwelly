@@ -17,6 +17,7 @@
         }
         main {
             flex: 1 0 auto;
+            padding-bottom: 2rem;
         }
         footer {
             flex-shrink: 0;
@@ -25,6 +26,9 @@
             text-align: center;
             padding: 1rem;
             margin-top: auto;
+            width: 100%;
+            position: relative;
+            bottom: 0;
         }
         .listings-container {
             max-width: 1200px;
@@ -126,29 +130,37 @@
                 <div class="listings-grid">
                     <% listings.forEach(function(listing) { %>
                         <div class="listing-card">
-                            <img src="<%= listing.photos && listing.photos.length > 0 ? listing.photos[0] : '/images/placeholder.jpg' %>" 
-                                 alt="<%= listing.type %>" 
-                                 class="listing-image"
-                                 onerror="this.src='/images/placeholder.jpg'">
-                            <div class="listing-content">
-                                <h3 class="listing-title"><%= listing.type %></h3>
-                                <span class="listing-type"><%= listing.type %></span>
-                                <p class="listing-location">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <%= listing.city %>, <%= listing.barangay %>
-                                </p>
-                                <div class="listing-meta">
-                                    <div class="listing-rating">
-                                        <i class="fas fa-star"></i>
-                                        <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %>
-                                    </div>
-                                    <div class="listing-favorite" 
-                                         data-post-id="<%= listing.post_id %>"
-                                         onclick="toggleFavorite(this)">
-                                        <i class="fas fa-heart text-danger"></i>
+                            <a href="/listings/<%= listing.post_id %>">
+                                <img src="<%= listing.photos && listing.photos.length > 0 ? listing.photos[0] : '/images/placeholder.jpg' %>" 
+                                     alt="<%= listing.type %>" 
+                                     class="listing-image"
+                                     onerror="this.src='/images/placeholder.jpg'">
+                                <div class="listing-content">
+                                    <h3 class="listing-title"><%= listing.type %></h3>
+                                    <span class="listing-type"><%= listing.type %></span>
+                                    <p class="listing-location">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <%= listing.city %>, <%= listing.barangay %>
+                                    </p>
+                                    <% if (listing.price) { %>
+                                        <p class="listing-price">₱<%= listing.price.toLocaleString() %>/month</p>
+                                    <% } %>
+                                    <div class="listing-meta">
+                                        <div class="listing-rating">
+                                            <i class="fas fa-star"></i>
+                                            <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %>
+                                            <% if (listing.rating_count > 0) { %>
+                                                (<%= listing.rating_count %>)
+                                            <% } %>
+                                        </div>
+                                        <div class="listing-favorite" 
+                                             data-post-id="<%= listing.post_id %>"
+                                             onclick="toggleFavorite(this)">
+                                            <i class="fas fa-bookmark"></i>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </a>
                         </div>
                     <% }); %>
                 </div>

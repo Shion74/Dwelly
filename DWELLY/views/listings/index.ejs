@@ -6,6 +6,30 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        main {
+            flex: 1 0 auto;
+            padding-bottom: 2rem;
+        }
+        footer {
+            flex-shrink: 0;
+            background: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: auto;
+            width: 100%;
+            position: relative;
+            bottom: 0;
+        }
         .listings-container {
             max-width: 1200px;
             margin: 2rem auto;
@@ -162,18 +186,21 @@
                     <% listings.forEach(listing => { %>
                         <a href="/listings/<%= listing.post_id %>" class="listing-card">
                             <div class="listing-photo-container">
-                                <div class="photo-placeholder">
-                                    <i class="fas fa-home"></i>
-                                </div>
-                                <img src="<%= listing.photos && listing.photos.length > 0 ? listing.photos[0] : '/images/no-image.jpg' %>" 
-                                     alt="<%= listing.type %>" 
-                                     class="listing-photo"
-                                     onload="this.classList.add('loaded')"
-                                     onerror="this.src='/images/no-image.jpg'; this.classList.add('loaded')">
+                                <% if (listing.photos && listing.photos.length > 0) { %>
+                                    <img src="<%= listing.photos[0] %>" 
+                                         alt="<%= listing.type %>" 
+                                         class="listing-photo"
+                                         onload="this.classList.add('loaded')"
+                                         onerror="this.src='/images/no-image.jpg'; this.classList.add('loaded')">
+                                <% } else { %>
+                                    <div class="photo-placeholder">
+                                        <i class="fas fa-home"></i>
+                                    </div>
+                                <% } %>
                             </div>
                             <div class="listing-content">
                                 <div>
-                                    <h2 class="listing-title"><%= listing.type || 'Unknown Type' %></h2>
+                                    <h2 class="listing-title"><%= listing.type %></h2>
                                     <div class="listing-meta">
                                         Posted by <%= listing.poster_name %> • 
                                         <%= new Date(listing.created_at).toLocaleDateString() %>
@@ -188,7 +215,7 @@
                                 </div>
                                 <div class="listing-stats">
                                     <div class="stat">
-                                        <i class="fas fa-heart"></i>
+                                        <i class="fas fa-bookmark"></i>
                                         <%= listing.favorite_count %> favorites
                                     </div>
                                     <div class="stat">

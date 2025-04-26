@@ -64,18 +64,24 @@ router.get('/', async (req, res) => {
             ORDER BY p.created_at DESC
         `);
 
-        console.log('Raw listings data:', listings.map(l => ({ id: l.post_id, type: l.type_display })));
-
         // Process photos for each listing
-        const processedListings = listings.map(listing => ({
-            ...listing,
-            photos: listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : [],
-            price: listing.price ? parseFloat(listing.price) : null,
-            average_rating: listing.average_rating ? parseFloat(listing.average_rating) : null,
-            favorite_count: parseInt(listing.favorite_count) || 0,
-            rating_count: parseInt(listing.rating_count) || 0,
-            type: listing.type_display || 'Unknown Type'
-        }));
+        const processedListings = listings.map(listing => {
+            // Process photos
+            let photos = [];
+            if (listing.photos) {
+                photos = listing.photos.split(',').map(photo => `/uploads/listings/${photo}`);
+            }
+
+            return {
+                ...listing,
+                photos,
+                price: listing.price ? parseFloat(listing.price) : null,
+                average_rating: listing.average_rating ? parseFloat(listing.average_rating) : null,
+                favorite_count: parseInt(listing.favorite_count) || 0,
+                rating_count: parseInt(listing.rating_count) || 0,
+                type: listing.type_display || 'Unknown Type'
+            };
+        });
 
         res.render('listings/index', {
             title: 'All Listings - Dwelly',
@@ -119,9 +125,11 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
             street, 
             barangay, 
             city, 
-            landlord_name, 
-            contact_number, 
-            social_media_link, 
+            building_name,
+            unit_number,
+            landlord_name,
+            contact_number,
+            social_media_link,
             google_maps_link,
             description,
             price
@@ -143,14 +151,10 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
 
         // Validate Google Maps link if provided
         if (google_maps_link && google_maps_link.trim() !== '') {
-            // Remove @ symbol if present at the start
             const cleanGoogleMapsLink = google_maps_link.startsWith('@') ? google_maps_link.substring(1) : google_maps_link;
-            
-            // Check if it's a valid Google Maps URL - accept any URL that looks like a Google Maps link
             if (!cleanGoogleMapsLink.includes('maps') || !cleanGoogleMapsLink.includes('goo.gl')) {
                 errors.push('Please provide a valid Google Maps link');
             }
-            // Update the cleaned link
             req.body.google_maps_link = cleanGoogleMapsLink;
         }
 
@@ -180,13 +184,13 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
             const [result] = await connection.query(
                 `INSERT INTO posts (
                     user_id, type_id, street, barangay, city, 
-                    landlord_name, contact_number, social_link, 
-                    maps_link, description, price
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    building_name, unit_number, landlord_name, contact_number,
+                    social_link, maps_link, description, price
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     req.session.user.id, type_id, street, barangay, city,
-                    landlord_name, contact_number, social_media_link || null,
-                    req.body.google_maps_link || null, description || null, price || null
+                    building_name || null, unit_number || null, landlord_name, contact_number,
+                    social_media_link || null, req.body.google_maps_link || null, description || null, price || null
                 ]
             );
 
@@ -234,7 +238,8 @@ router.get('/:id', async (req, res) => {
         const [listings] = await pool.query(`
             SELECT p.*, u.full_name as poster_name,
                    (SELECT COUNT(*) FROM favorites WHERE post_id = p.post_id) as favorite_count,
-                   (SELECT AVG(stars) FROM ratings WHERE post_id = p.post_id) as average_rating
+                   (SELECT AVG(stars) FROM ratings WHERE post_id = p.post_id) as average_rating,
+                   (SELECT COUNT(*) FROM ratings WHERE post_id = p.post_id) as rating_count
             FROM posts p
             JOIN users u ON p.user_id = u.user_id
             WHERE p.post_id = ? AND p.is_flagged = false
@@ -248,6 +253,10 @@ router.get('/:id', async (req, res) => {
         }
 
         const listing = listings[0];
+
+        // Convert average_rating to number and handle null case
+        listing.average_rating = listing.average_rating ? parseFloat(listing.average_rating) : null;
+        listing.rating_count = parseInt(listing.rating_count) || 0;
 
         // Get photos and format their paths
         const [photos] = await pool.query(
@@ -329,24 +338,42 @@ router.post('/:id/favorite', isAuthenticated, async (req, res) => {
 router.post('/:id/rate', isAuthenticated, async (req, res) => {
     try {
         const { stars, comment } = req.body;
+        const postId = req.params.id;
+        const userId = req.session.user.id;
 
         // Check if user is rating their own post
         const [posts] = await pool.query(
             'SELECT user_id FROM posts WHERE post_id = ?',
-            [req.params.id]
+            [postId]
         );
 
-        if (posts[0].user_id === req.session.user.id) {
+        if (posts.length === 0) {
+            return res.status(404).json({ error: 'Listing not found' });
+        }
+
+        if (posts[0].user_id === userId) {
             return res.status(400).json({ error: 'Cannot rate your own listing' });
         }
 
-        // Insert or update rating
-        await pool.query(
-            `INSERT INTO ratings (user_id, post_id, stars, comment)
-             VALUES (?, ?, ?, ?)
-             ON DUPLICATE KEY UPDATE stars = ?, comment = ?`,
-            [req.session.user.id, req.params.id, stars, comment, stars, comment]
+        // Check if user has already rated this post
+        const [existingRatings] = await pool.query(
+            'SELECT * FROM ratings WHERE user_id = ? AND post_id = ?',
+            [userId, postId]
         );
+
+        if (existingRatings.length > 0) {
+            // Update existing rating
+            await pool.query(
+                'UPDATE ratings SET stars = ?, comment = ? WHERE user_id = ? AND post_id = ?',
+                [stars, comment, userId, postId]
+            );
+        } else {
+            // Insert new rating
+            await pool.query(
+                'INSERT INTO ratings (user_id, post_id, stars, comment) VALUES (?, ?, ?, ?)',
+                [userId, postId, stars, comment]
+            );
+        }
 
         res.json({ success: true });
     } catch (error) {

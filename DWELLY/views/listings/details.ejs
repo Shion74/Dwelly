@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         .success-message {
             background-color: #d4edda;
@@ -33,11 +34,12 @@
         }
         .listing-content {
             display: grid;
-            grid-template-columns: 2fr 1fr;
+            grid-template-columns: 1fr 1fr;
             gap: 2rem;
         }
         .listing-photos {
-            margin-bottom: 2rem;
+            position: sticky;
+            top: 2rem;
         }
         .main-photo {
             width: 100%;
@@ -45,6 +47,7 @@
             object-fit: cover;
             border-radius: 10px;
             margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .photo-grid {
             display: grid;
@@ -58,9 +61,14 @@
             border-radius: 5px;
             cursor: pointer;
             transition: opacity 0.3s ease;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         .photo-thumbnail:hover {
             opacity: 0.8;
+        }
+        .listing-details {
+            position: sticky;
+            top: 2rem;
         }
         .listing-info {
             background: white;
@@ -130,6 +138,179 @@
         .btn-danger:hover {
             background: #c0392b;
         }
+
+        @media (max-width: 768px) {
+            .listing-content {
+                grid-template-columns: 1fr;
+            }
+            .listing-photos, .listing-details {
+                position: static;
+            }
+        }
+
+        .photo-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 1rem;
+            padding: 0.5rem;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .action-icon {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: none;
+            color: #7f8c8d;
+        }
+
+        .action-icon:hover {
+            background: #f8f9fa;
+            color: #3498db;
+        }
+
+        .action-icon.active {
+            color: #e74c3c;
+        }
+
+        .action-icon i {
+            font-size: 1.2rem;
+        }
+
+        .action-icon span {
+            font-size: 0.9rem;
+        }
+
+        .rating-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .rating-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 400px;
+        }
+
+        .rating-stars {
+            display: flex;
+            gap: 0.5rem;
+            margin: 1rem 0;
+            font-size: 1.5rem;
+        }
+
+        .rating-stars i {
+            cursor: pointer;
+            color: #ddd;
+        }
+
+        .rating-stars i.active {
+            color: #f1c40f;
+        }
+
+        .modal-buttons {
+            display: flex;
+            justify-content: flex-end;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .photo-viewer-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .photo-viewer-content {
+            position: relative;
+            width: 90%;
+            height: 90%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .photo-viewer-image {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+        }
+
+        .photo-viewer-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 2rem;
+        }
+
+        .photo-viewer-nav button {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 1rem;
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.3s ease;
+        }
+
+        .photo-viewer-nav button:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .photo-viewer-close {
+            position: absolute;
+            top: 1rem;
+            right: 1rem;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 0.5rem 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background 0.3s ease;
+        }
+
+        .photo-viewer-close:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .photo-viewer-counter {
+            position: absolute;
+            bottom: 1rem;
+            left: 50%;
+            transform: translateX(-50%);
+            color: white;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+        }
     </style>
 </head>
 <body>
@@ -164,20 +345,45 @@
             </div>
 
             <div class="listing-content">
-                <div class="listing-main">
-                    <div class="listing-photos">
-                        <% if (photos && photos.length > 0) { %>
-                            <img src="<%= photos[0].file_path %>" alt="Main photo" class="main-photo">
-                            <div class="photo-grid">
-                                <% photos.forEach((photo, index) => { %>
-                                    <img src="<%= photo.file_path %>" alt="Photo <%= index + 1 %>" class="photo-thumbnail">
-                                <% }); %>
-                            </div>
-                        <% } else { %>
-                            <img src="/images/no-image.jpg" alt="No photo available" class="main-photo">
-                        <% } %>
-                    </div>
+                <div class="listing-photos">
+                    <% if (photos && photos.length > 0) { %>
+                        <img src="<%= photos[0].file_path %>" alt="Main photo" class="main-photo">
+                        <div class="photo-grid">
+                            <% photos.forEach((photo, index) => { %>
+                                <img src="<%= photo.file_path %>" alt="Photo <%= index + 1 %>" class="photo-thumbnail">
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <img src="/images/no-image.jpg" alt="No photo available" class="main-photo">
+                    <% } %>
 
+                    <% if (user) { %>
+                        <div class="photo-actions">
+                            <% if (user.id !== listing.user_id) { %>
+                                <button class="action-icon <%= isFavorited ? 'active' : '' %>" id="favoriteBtn" data-post-id="<%= listing.post_id %>">
+                                    <i class="fas fa-bookmark"></i>
+                                    <span><%= listing.favorite_count || 0 %></span>
+                                </button>
+                                <button class="action-icon" id="rateBtn">
+                                    <i class="fas fa-star"></i>
+                                    <span><%= listing.average_rating ? listing.average_rating.toFixed(1) : 'Rate' %></span>
+                                </button>
+                                <button class="action-icon" id="reportBtn">
+                                    <i class="fas fa-flag"></i>
+                                </button>
+                            <% } else { %>
+                                <button class="action-icon" id="editBtn" data-post-id="<%= listing.post_id %>">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="action-icon" id="deleteBtn" data-post-id="<%= listing.post_id %>">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            <% } %>
+                        </div>
+                    <% } %>
+                </div>
+
+                <div class="listing-details">
                     <div class="listing-info">
                         <div class="info-section">
                             <h3>Description</h3>
@@ -198,6 +404,18 @@
                                 <div class="info-label">City</div>
                                 <div class="info-value"><%= listing.city %></div>
                             </div>
+                            <% if (listing.building_name) { %>
+                                <div class="info-field">
+                                    <div class="info-label">Building</div>
+                                    <div class="info-value"><%= listing.building_name %></div>
+                                </div>
+                            <% } %>
+                            <% if (listing.unit_number) { %>
+                                <div class="info-field">
+                                    <div class="info-label">Unit</div>
+                                    <div class="info-value"><%= listing.unit_number %></div>
+                                </div>
+                            <% } %>
                         </div>
 
                         <div class="info-section">
@@ -234,11 +452,7 @@
                                 <div class="info-value">₱<%= listing.price.toLocaleString() %>/month</div>
                             </div>
                         <% } %>
-                    </div>
-                </div>
 
-                <div class="listing-sidebar">
-                    <div class="listing-info">
                         <div class="info-section">
                             <h3>Statistics</h3>
                             <div class="info-field">
@@ -248,24 +462,21 @@
                             <div class="info-field">
                                 <div class="info-label">Rating</div>
                                 <div class="info-value">
-                                    <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %> / 5
+                                    <% if (listing.average_rating) { %>
+                                        <%= listing.average_rating.toFixed(1) %>/5.0
+                                        (<%= listing.rating_count %> reviews)
+                                    <% } else { %>
+                                        No ratings yet
+                                    <% } %>
                                 </div>
                             </div>
                         </div>
 
-                        <div class="action-buttons">
-                            <% if (user) { %>
-                                <button class="btn btn-primary" id="favoriteBtn" data-post-id="<%= listing.post_id %>">
-                                    <%= isFavorited ? 'Remove from Favorites' : 'Add to Favorites' %>
-                                </button>
-                                <% if (user.id === listing.user_id) { %>
-                                    <a href="/listings/<%= listing.post_id %>/edit" class="btn btn-secondary">Edit Listing</a>
-                                    <button class="btn btn-danger" id="deleteBtn" data-post-id="<%= listing.post_id %>">Delete Listing</button>
-                                <% } %>
-                            <% } else { %>
+                        <% if (!user) { %>
+                            <div class="info-section">
                                 <a href="/auth/login" class="btn btn-primary">Login to Interact</a>
-                            <% } %>
-                        </div>
+                            </div>
+                        <% } %>
                     </div>
                 </div>
             </div>
@@ -275,6 +486,38 @@
     <footer>
         <p>&copy; 2024 Dwelly. All rights reserved.</p>
     </footer>
+
+    <!-- Rating Modal -->
+    <div class="rating-modal" id="ratingModal">
+        <div class="rating-content">
+            <h3>Rate this listing</h3>
+            <div class="rating-stars">
+                <% for(let i = 1; i <= 5; i++) { %>
+                    <i class="fas fa-star" data-rating="<%= i %>"></i>
+                <% } %>
+            </div>
+            <textarea class="form-control" id="ratingComment" placeholder="Add a comment (optional)"></textarea>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" id="cancelRating">Cancel</button>
+                <button class="btn btn-primary" id="submitRating">Submit</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Photo Viewer Modal -->
+    <div class="photo-viewer-modal" id="photoViewer">
+        <div class="photo-viewer-content">
+            <img src="" alt="Full size photo" class="photo-viewer-image" id="viewerImage">
+            <div class="photo-viewer-nav">
+                <button id="prevPhoto"><i class="fas fa-chevron-left"></i></button>
+                <button id="nextPhoto"><i class="fas fa-chevron-right"></i></button>
+            </div>
+            <button class="photo-viewer-close" id="closeViewer">
+                <i class="fas fa-times"></i>
+            </button>
+            <div class="photo-viewer-counter" id="photoCounter"></div>
+        </div>
+    </div>
 
     <script>
         // Favorite button functionality
@@ -288,11 +531,98 @@
                 });
                 const data = await response.json();
                 if (data.success) {
-                    this.textContent = data.action === 'added' ? 'Remove from Favorites' : 'Add to Favorites';
-                    location.reload();
+                    this.classList.toggle('active');
+                    const countSpan = this.querySelector('span');
+                    countSpan.textContent = parseInt(countSpan.textContent) + (data.action === 'added' ? 1 : -1);
                 }
             } catch (error) {
                 console.error('Error:', error);
+            }
+        });
+
+        // Edit button functionality
+        document.getElementById('editBtn')?.addEventListener('click', function() {
+            window.location.href = `/listings/${this.dataset.postId}/edit`;
+        });
+
+        // Report button functionality
+        document.getElementById('reportBtn')?.addEventListener('click', async function() {
+            const reason = prompt('Please enter the reason for reporting this listing:');
+            if (reason) {
+                try {
+                    const response = await fetch(`/listings/<%= listing.post_id %>/report`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ reason })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                        alert('Thank you for your report. We will review it shortly.');
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                }
+            }
+        });
+
+        // Rating functionality
+        const ratingModal = document.getElementById('ratingModal');
+        const rateBtn = document.getElementById('rateBtn');
+        const cancelRating = document.getElementById('cancelRating');
+        const submitRating = document.getElementById('submitRating');
+        const stars = document.querySelectorAll('.rating-stars i');
+        let selectedRating = 0;
+
+        rateBtn?.addEventListener('click', () => {
+            ratingModal.style.display = 'flex';
+        });
+
+        cancelRating?.addEventListener('click', () => {
+            ratingModal.style.display = 'none';
+            selectedRating = 0;
+            stars.forEach(star => star.classList.remove('active'));
+        });
+
+        stars.forEach(star => {
+            star.addEventListener('click', () => {
+                selectedRating = parseInt(star.dataset.rating);
+                stars.forEach(s => {
+                    s.classList.toggle('active', parseInt(s.dataset.rating) <= selectedRating);
+                });
+            });
+        });
+
+        submitRating?.addEventListener('click', async () => {
+            if (selectedRating === 0) {
+                alert('Please select a rating');
+                return;
+            }
+
+            try {
+                const response = await fetch(`/listings/<%= listing.post_id %>/rate`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        stars: selectedRating,
+                        comment: document.getElementById('ratingComment').value
+                    })
+                });
+
+                const data = await response.json();
+                
+                if (data.success) {
+                    ratingModal.style.display = 'none';
+                    location.reload();
+                } else {
+                    alert(data.error || 'Failed to submit rating');
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Failed to submit rating. Please try again.');
             }
         });
 
@@ -325,6 +655,67 @@
                 mainPhoto.src = thumbnail.src;
             });
         });
+
+        // Photo viewer functionality
+        const photoViewer = document.getElementById('photoViewer');
+        const viewerImage = document.getElementById('viewerImage');
+        const prevPhoto = document.getElementById('prevPhoto');
+        const nextPhoto = document.getElementById('nextPhoto');
+        const closeViewer = document.getElementById('closeViewer');
+        const photoCounter = document.getElementById('photoCounter');
+        let currentPhotoIndex = 0;
+        const photos = Array.from(document.querySelectorAll('.photo-thumbnail'));
+
+        // Open photo viewer when clicking on any photo
+        document.querySelectorAll('.main-photo, .photo-thumbnail').forEach((photo, index) => {
+            photo.addEventListener('click', () => {
+                currentPhotoIndex = index;
+                updateViewer();
+                photoViewer.style.display = 'flex';
+                document.body.style.overflow = 'hidden'; // Prevent scrolling
+            });
+        });
+
+        // Close viewer
+        closeViewer.addEventListener('click', () => {
+            photoViewer.style.display = 'none';
+            document.body.style.overflow = ''; // Restore scrolling
+        });
+
+        // Close on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && photoViewer.style.display === 'flex') {
+                closeViewer.click();
+            }
+        });
+
+        // Navigate photos
+        prevPhoto.addEventListener('click', () => {
+            currentPhotoIndex = (currentPhotoIndex - 1 + photos.length) % photos.length;
+            updateViewer();
+        });
+
+        nextPhoto.addEventListener('click', () => {
+            currentPhotoIndex = (currentPhotoIndex + 1) % photos.length;
+            updateViewer();
+        });
+
+        // Keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (photoViewer.style.display === 'flex') {
+                if (e.key === 'ArrowLeft') {
+                    prevPhoto.click();
+                } else if (e.key === 'ArrowRight') {
+                    nextPhoto.click();
+                }
+            }
+        });
+
+        function updateViewer() {
+            const photo = photos[currentPhotoIndex];
+            viewerImage.src = photo.src;
+            photoCounter.textContent = `${currentPhotoIndex + 1} / ${photos.length}`;
+        }
     </script>
 </body>
 </html> 

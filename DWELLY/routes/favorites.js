@@ -39,7 +39,15 @@ router.get('/', isAuthenticated, async (req, res) => {
             average_rating: favorite.average_rating ? parseFloat(favorite.average_rating) : null,
             favorite_count: parseInt(favorite.favorite_count) || 0,
             rating_count: parseInt(favorite.rating_count) || 0,
-            type: favorite.type_display || 'Unknown Type'
+            type: favorite.type_display || 'Unknown Type',
+            has_wifi: favorite.has_wifi ? true : false,
+            has_cctv: favorite.has_cctv ? true : false,
+            is_airconditioned: favorite.is_airconditioned ? true : false,
+            has_parking: favorite.has_parking ? true : false,
+            has_own_electricity: favorite.has_own_electricity ? true : false,
+            has_own_water: favorite.has_own_water ? true : false,
+            barangay: favorite.barangay || '',
+            city: favorite.city || 'Davao City'
         }));
 
         res.render('favorites', {

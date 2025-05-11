@@ -51,14 +51,19 @@ router.get('/', async (req, res) => {
                    rt.type_name, rt.display_name as type_display,
                    GROUP_CONCAT(ph.file_path) as photos,
                    COUNT(DISTINCT f.user_id) as favorite_count,
-                   AVG(r.stars) as average_rating,
-                   COUNT(DISTINCT r.rating_id) as rating_count
+                   AVG(rat.stars) as average_rating,
+                   COUNT(DISTINCT rat.rating_id) as rating_count,
+                   rm.number_of_rooms, rm.bathroom_type, rm.room_type,
+                   rm.has_wifi, rm.has_cctv, rm.is_airconditioned,
+                   rm.has_parking, rm.has_own_electricity, rm.has_own_water,
+                   p.latitude, p.longitude
             FROM posts p
             LEFT JOIN users u ON p.user_id = u.user_id
             LEFT JOIN room_types rt ON p.type_id = rt.type_id
             LEFT JOIN photos ph ON p.post_id = ph.post_id
             LEFT JOIN favorites f ON p.post_id = f.post_id
-            LEFT JOIN ratings r ON p.post_id = r.post_id
+            LEFT JOIN ratings rat ON p.post_id = rat.post_id
+            LEFT JOIN rooms rm ON p.post_id = rm.post_id
             WHERE p.is_flagged = false
             GROUP BY p.post_id
             ORDER BY p.created_at DESC
@@ -79,7 +84,9 @@ router.get('/', async (req, res) => {
                 average_rating: listing.average_rating ? parseFloat(listing.average_rating) : null,
                 favorite_count: parseInt(listing.favorite_count) || 0,
                 rating_count: parseInt(listing.rating_count) || 0,
-                type: listing.type_display || 'Unknown Type'
+                type: listing.type_display || 'Unknown Type',
+                latitude: listing.latitude ? parseFloat(listing.latitude) : null,
+                longitude: listing.longitude ? parseFloat(listing.longitude) : null
             };
         });
 
@@ -91,8 +98,9 @@ router.get('/', async (req, res) => {
     } catch (error) {
         console.error('Error fetching listings:', error);
         res.status(500).render('error', {
-            title: '500 - Server Error',
-            message: 'Error loading listings'
+            title: 'Error - Dwelly',
+            message: 'Error fetching listings',
+            error: process.env.NODE_ENV === 'development' ? error : {}
         });
     }
 });
@@ -124,16 +132,30 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
             type_id, 
             street, 
             barangay, 
-            city, 
             building_name,
             unit_number,
             landlord_name,
             contact_number,
             social_media_link,
-            google_maps_link,
             description,
-            price
+            price,
+            // New fields
+            number_of_rooms,
+            bathroom_type,
+            room_type,
+            has_wifi,
+            has_cctv,
+            is_airconditioned,
+            has_parking,
+            has_own_electricity,
+            has_own_water,
+            latitude,
+            longitude,
+            maps_link
         } = req.body;
+
+        // Set default city
+        const city = 'Davao City';
 
         console.log('Received form data:', req.body);
         console.log('Received files:', req.files);
@@ -143,20 +165,24 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
         if (!type_id) errors.push('Type of rental is required');
         if (!street) errors.push('Street address is required');
         if (!barangay) errors.push('Barangay is required');
-        if (!city) errors.push('City is required');
         if (!landlord_name) errors.push('Landlord name is required');
         if (!contact_number) errors.push('Contact number is required');
         if (!req.files || req.files.length < 2) errors.push('At least 2 photos are required');
         if (req.files && req.files.length > 6) errors.push('Maximum 6 photos allowed');
+        if (!number_of_rooms) errors.push('Number of rooms is required');
+        if (!bathroom_type) errors.push('Bathroom type is required');
+        if (!room_type) errors.push('Room type is required');
+        if (!latitude || !longitude) errors.push('Please select a location on the map');
 
         // Validate Google Maps link if provided
-        if (google_maps_link && google_maps_link.trim() !== '') {
-            const cleanGoogleMapsLink = google_maps_link.startsWith('@') ? google_maps_link.substring(1) : google_maps_link;
-            if (!cleanGoogleMapsLink.includes('maps') || !cleanGoogleMapsLink.includes('goo.gl')) {
-                errors.push('Please provide a valid Google Maps link');
-            }
-            req.body.google_maps_link = cleanGoogleMapsLink;
+        let cleaned_maps_link = maps_link ? maps_link.trim() : '';
+        if (cleaned_maps_link.startsWith('@')) {
+            cleaned_maps_link = cleaned_maps_link.substring(1);
         }
+        if (cleaned_maps_link && !/^https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|maps\.apple\.com)\/.+/.test(cleaned_maps_link)) {
+            errors.push('Please enter a valid Google Maps or Apple Maps link.');
+        }
+        req.body.maps_link = cleaned_maps_link;
 
         // Clean up empty social media link
         if (social_media_link && social_media_link.trim() === '') {
@@ -185,22 +211,39 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
                 `INSERT INTO posts (
                     user_id, type_id, street, barangay, city, 
                     building_name, unit_number, landlord_name, contact_number,
-                    social_link, maps_link, description, price
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    social_link, description, price, latitude, longitude,
+                    maps_link
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     req.session.user.id, type_id, street, barangay, city,
                     building_name || null, unit_number || null, landlord_name, contact_number,
-                    social_media_link || null, req.body.google_maps_link || null, description || null, price || null
+                    social_media_link || null, description || null, price || null,
+                    latitude, longitude,
+                    req.body.maps_link || null
                 ]
             );
 
             const postId = result.insertId;
 
+            // Insert room details
+            await connection.query(
+                `INSERT INTO rooms (
+                    post_id, number_of_rooms, bathroom_type, room_type,
+                    has_wifi, has_cctv, is_airconditioned, has_parking,
+                    has_own_electricity, has_own_water
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    postId, number_of_rooms, bathroom_type, room_type,
+                    has_wifi ? 1 : 0, has_cctv ? 1 : 0, is_airconditioned ? 1 : 0,
+                    has_parking ? 1 : 0, has_own_electricity ? 1 : 0, has_own_water ? 1 : 0
+                ]
+            );
+
             // Insert photos
             for (const file of req.files) {
                 await connection.query(
                     'INSERT INTO photos (post_id, file_path) VALUES (?, ?)',
-                    [postId, file.filename] // Store just the filename
+                    [postId, file.filename]
                 );
             }
 
@@ -237,11 +280,17 @@ router.get('/:id', async (req, res) => {
     try {
         const [listings] = await pool.query(`
             SELECT p.*, u.full_name as poster_name,
+                   rt.type_name, rt.display_name as type_display,
+                   rm.number_of_rooms, rm.bathroom_type, rm.room_type,
+                   rm.has_wifi, rm.has_cctv, rm.is_airconditioned,
+                   rm.has_parking, rm.has_own_electricity, rm.has_own_water,
                    (SELECT COUNT(*) FROM favorites WHERE post_id = p.post_id) as favorite_count,
                    (SELECT AVG(stars) FROM ratings WHERE post_id = p.post_id) as average_rating,
                    (SELECT COUNT(*) FROM ratings WHERE post_id = p.post_id) as rating_count
             FROM posts p
             JOIN users u ON p.user_id = u.user_id
+            LEFT JOIN room_types rt ON p.type_id = rt.type_id
+            LEFT JOIN rooms rm ON p.post_id = rm.post_id
             WHERE p.post_id = ? AND p.is_flagged = false
         `, [req.params.id]);
 
@@ -257,6 +306,13 @@ router.get('/:id', async (req, res) => {
         // Convert average_rating to number and handle null case
         listing.average_rating = listing.average_rating ? parseFloat(listing.average_rating) : null;
         listing.rating_count = parseInt(listing.rating_count) || 0;
+        // Ensure amenity fields are boolean
+        listing.has_wifi = !!listing.has_wifi;
+        listing.has_cctv = !!listing.has_cctv;
+        listing.is_airconditioned = !!listing.is_airconditioned;
+        listing.has_parking = !!listing.has_parking;
+        listing.has_own_electricity = !!listing.has_own_electricity;
+        listing.has_own_water = !!listing.has_own_water;
 
         // Get photos and format their paths
         const [photos] = await pool.query(
@@ -465,32 +521,36 @@ router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req,
             type_id, 
             street, 
             barangay, 
-            city, 
             landlord_name, 
             contact_number, 
             social_media_link, 
-            google_maps_link,
+            maps_link,
             description,
-            price
+            price,
+            latitude,
+            longitude
         } = req.body;
+
+        // Set default city
+        const city = 'Davao City';
 
         // Validate required fields
         const errors = [];
         if (!type_id) errors.push('Type of rental is required');
         if (!street) errors.push('Street address is required');
         if (!barangay) errors.push('Barangay is required');
-        if (!city) errors.push('City is required');
         if (!landlord_name) errors.push('Landlord name is required');
         if (!contact_number) errors.push('Contact number is required');
 
         // Validate Google Maps link if provided
-        if (google_maps_link && google_maps_link.trim() !== '') {
-            const cleanGoogleMapsLink = google_maps_link.startsWith('@') ? google_maps_link.substring(1) : google_maps_link;
-            if (!cleanGoogleMapsLink.includes('maps') || !cleanGoogleMapsLink.includes('goo.gl')) {
-                errors.push('Please provide a valid Google Maps link');
-            }
-            req.body.google_maps_link = cleanGoogleMapsLink;
+        let cleaned_maps_link = maps_link ? maps_link.trim() : '';
+        if (cleaned_maps_link.startsWith('@')) {
+            cleaned_maps_link = cleaned_maps_link.substring(1);
         }
+        if (cleaned_maps_link && !/^https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|maps\.apple\.com)\/.+/.test(cleaned_maps_link)) {
+            errors.push('Please enter a valid Google Maps or Apple Maps link.');
+        }
+        req.body.maps_link = cleaned_maps_link;
 
         // Clean up empty social media link
         if (social_media_link && social_media_link.trim() === '') {
@@ -526,14 +586,18 @@ router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req,
                     social_link = ?, 
                     maps_link = ?, 
                     description = ?, 
-                    price = ?
+                    price = ?,
+                    latitude = ?,
+                    longitude = ?
                 WHERE post_id = ? AND user_id = ?`,
                 [
                     type_id, street, barangay, city,
                     landlord_name, contact_number, 
                     social_media_link || null,
-                    google_maps_link || null, 
+                    cleaned_maps_link || null, 
                     description || null, price || null,
+                    latitude,
+                    longitude,
                     req.params.id, req.session.user.id
                 ]
             );

@@ -6,6 +6,7 @@ const path = require('path');
 const cors = require('cors');
 const multer = require('multer');
 const fs = require('fs');
+const pool = require('./config/database');
 
 const app = express();
 
@@ -93,12 +94,107 @@ app.use('/users', userRoutes);
 app.use('/admin', adminRoutes);
 app.use('/favorites', favoritesRouter);
 
+// Test route for listings with coordinates
+app.get('/test-coordinates', async (req, res) => {
+    try {
+        const [listings] = await pool.query(`
+            SELECT p.post_id, rt.type_name as type, p.latitude, p.longitude, p.city, p.barangay
+            FROM posts p
+            LEFT JOIN room_types rt ON p.type_id = rt.type_id
+            WHERE p.latitude IS NOT NULL AND p.longitude IS NOT NULL
+        `);
+        
+        res.json({
+            totalListings: listings.length,
+            listings: listings.map(l => ({
+                id: l.post_id,
+                type: l.type,
+                lat: l.latitude,
+                lng: l.longitude,
+                location: `${l.barangay}, ${l.city}`
+            }))
+        });
+    } catch (error) {
+        console.error('Error fetching listings with coordinates:', error);
+        res.status(500).json({ error: error.message });
+    }
+});
+
 // Home route
-app.get('/', (req, res) => {
-    res.render('index', { 
-        title: 'Dwelly - Find Your Perfect Student Housing',
-        user: req.session.user 
-    });
+app.get('/', async (req, res) => {
+    try {
+        console.log('Fetching listings for home page...');
+        const [listings] = await pool.query(`
+            SELECT p.*, u.full_name as poster_name,
+                   rt.type_name, rt.type_name as type,
+                   GROUP_CONCAT(ph.file_path) as photos,
+                   COUNT(DISTINCT f.user_id) as favorite_count,
+                   AVG(rat.stars) as average_rating,
+                   COUNT(DISTINCT rat.rating_id) as rating_count,
+                   rm.number_of_rooms, rm.bathroom_type, rm.room_type,
+                   rm.has_wifi, rm.has_cctv, rm.is_airconditioned,
+                   rm.has_parking, rm.has_own_electricity, rm.has_own_water,
+                   p.latitude, p.longitude
+            FROM posts p
+            LEFT JOIN users u ON p.user_id = u.user_id
+            LEFT JOIN room_types rt ON p.type_id = rt.type_id
+            LEFT JOIN photos ph ON p.post_id = ph.post_id
+            LEFT JOIN favorites f ON p.post_id = f.post_id
+            LEFT JOIN ratings rat ON p.post_id = rat.post_id
+            LEFT JOIN rooms rm ON p.post_id = rm.post_id
+            WHERE p.is_flagged = false
+            GROUP BY p.post_id
+            ORDER BY p.created_at DESC
+        `);
+
+        console.log('Raw listings data:', listings);
+
+        // Process photos for each listing
+        const processedListings = listings.map(listing => {
+            // Process photos
+            let photos = [];
+            if (listing.photos) {
+                photos = listing.photos.split(',').map(photo => `/uploads/listings/${photo}`);
+            }
+
+            const processed = {
+                ...listing,
+                photos,
+                price: listing.price ? parseFloat(listing.price) : null,
+                average_rating: listing.average_rating ? parseFloat(listing.average_rating) : null,
+                favorite_count: parseInt(listing.favorite_count) || 0,
+                rating_count: parseInt(listing.rating_count) || 0,
+                type: listing.type_name || 'Unknown Type',
+                latitude: listing.latitude ? parseFloat(listing.latitude) : null,
+                longitude: listing.longitude ? parseFloat(listing.longitude) : null
+            };
+
+            console.log('Processed listing:', {
+                id: processed.post_id,
+                type: processed.type,
+                latitude: processed.latitude,
+                longitude: processed.longitude
+            });
+
+            return processed;
+        });
+
+        console.log('Total processed listings:', processedListings.length);
+        console.log('Listings with coordinates:', processedListings.filter(l => l.latitude && l.longitude).length);
+
+        res.render('index', { 
+            title: 'Dwelly - Find Your Perfect Student Housing',
+            user: req.session.user,
+            listings: processedListings
+        });
+    } catch (error) {
+        console.error('Error fetching listings:', error);
+        res.status(500).render('error', {
+            title: 'Error - Dwelly',
+            message: 'Error fetching listings',
+            error: process.env.NODE_ENV === 'development' ? error : {}
+        });
+    }
 });
 
 // Error handling middleware

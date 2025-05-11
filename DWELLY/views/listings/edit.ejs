@@ -273,18 +273,40 @@
 
                         <div class="form-group">
                             <label class="form-label required" for="barangay">Barangay</label>
-                            <input type="text" class="form-control" id="barangay" name="barangay" required value="<%= formData.barangay %>">
+                            <input type="text" class="form-control" id="barangay" name="barangay" required value="<%= formData.barangay || '' %>">
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label required" for="city">City</label>
-                            <input type="text" class="form-control" id="city" name="city" required value="<%= listing.city %>" readonly>
+                            <label class="form-label" for="maps_link">Google/Apple Maps Link</label>
+                            <input
+                                type="url"
+                                class="form-control"
+                                id="maps_link"
+                                name="maps_link"
+                                value="<%= formData.maps_link || '' %>"
+                                placeholder="e.g. https://maps.app.goo.gl/8FxdZA3SrtzYczLe6"
+                                pattern="(@?https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|maps\.apple\.com)\/.*)?"
+                            >
+                            <div class="form-text">
+                                Paste the full Google Maps or Apple Maps link. If your link starts with <b>@</b>, remove the <b>@</b>.
+                            </div>
                         </div>
 
                         <div class="form-group">
                             <label class="form-label" for="description">Description</label>
                             <textarea class="form-control" id="description" name="description" rows="4"><%= listing.description %></textarea>
                             <div class="form-text">Describe the property, its features, and any important details potential tenants should know.</div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3>Location</h3>
+                        <div class="form-group">
+                            <label class="form-label">Map Location</label>
+                            <div id="map" style="height: 400px; margin-bottom: 1rem;"></div>
+                            <input type="hidden" id="latitude" name="latitude" value="<%= formData.latitude || '' %>">
+                            <input type="hidden" id="longitude" name="longitude" value="<%= formData.longitude || '' %>">
+                            <div class="form-text">Click on the map to set the exact location of your property.</div>
                         </div>
                     </div>
 
@@ -326,6 +348,10 @@
         <p>&copy; 2024 Dwelly. All rights reserved.</p>
     </footer>
 
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
+    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const photoUpload = document.getElementById('photoUpload');
@@ -408,6 +434,104 @@
                     reader.readAsDataURL(file);
                 }
             }
+
+            // Initialize map
+            const map = L.map('map').setView([7.0633, 125.5956], 14);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 18,
+                minZoom: 12
+            }).addTo(map);
+
+            // Add search control
+            const geocoder = L.Control.geocoder({
+                defaultMarkGeocode: false,
+                placeholder: 'Search for a location in Davao City...',
+                errorMessage: 'No results found.',
+                geocoder: L.Control.Geocoder.nominatim({
+                    bounds: L.latLngBounds(
+                        [7.0, 125.4], // Southwest corner of Davao City
+                        [7.2, 125.7]  // Northeast corner of Davao City
+                    )
+                })
+            }).on('markgeocode', function(e) {
+                const latlng = e.geocode.center;
+                // Only allow locations within Davao City bounds
+                if (latlng.lat >= 7.0 && latlng.lat <= 7.2 && 
+                    latlng.lng >= 125.4 && latlng.lng <= 125.7) {
+                    updateMarker(latlng);
+                } else {
+                    alert('Please select a location within Davao City');
+                }
+            }).addTo(map);
+
+            // Add Mapúa marker
+            const mapuaMarker = L.marker([7.0633, 125.5956]).addTo(map);
+            mapuaMarker.bindPopup('<strong>Mapúa Malayan Colleges Mindanao</strong><br>Reference point for student housing').openPopup();
+
+            // Add distance circle (1km radius)
+            let distanceCircle = L.circle([7.0633, 125.5956], {
+                radius: 1000,
+                className: 'distance-circle'
+            }).addTo(map);
+
+            let marker = null;
+            const latitudeInput = document.getElementById('latitude');
+            const longitudeInput = document.getElementById('longitude');
+
+            // Function to update marker and inputs
+            function updateMarker(latlng) {
+                if (marker) {
+                    marker.setLatLng(latlng);
+                } else {
+                    marker = L.marker(latlng, {
+                        draggable: true
+                    }).addTo(map);
+                    // Add drag end event
+                    marker.on('dragend', function(e) {
+                        const newLatLng = e.target.getLatLng();
+                        updateInputs(newLatLng);
+                    });
+                }
+                updateInputs(latlng);
+                map.setView(latlng, 15);
+            }
+
+            // Function to update input values
+            function updateInputs(latlng) {
+                latitudeInput.value = latlng.lat.toFixed(6);
+                longitudeInput.value = latlng.lng.toFixed(6);
+            }
+
+            // Add marker if coordinates exist
+            if (latitudeInput.value && longitudeInput.value) {
+                updateMarker([latitudeInput.value, longitudeInput.value]);
+            }
+
+            // Handle map click
+            map.on('click', function(e) {
+                const latlng = e.latlng;
+                // Only allow clicks within Davao City bounds
+                if (latlng.lat >= 7.0 && latlng.lat <= 7.2 && 
+                    latlng.lng >= 125.4 && latlng.lng <= 125.7) {
+                    updateMarker(latlng);
+                } else {
+                    alert('Please select a location within Davao City');
+                }
+            });
+
+            // Add instructions to the map
+            const instructions = L.control({ position: 'topright' });
+            instructions.onAdd = function() {
+                const div = L.DomUtil.create('div', 'map-instructions');
+                div.innerHTML = '<strong>Instructions:</strong><br>' +
+                               '1. Click on the map to set location<br>' +
+                               '2. Or use the search box above<br>' +
+                               '3. Drag the marker to adjust<br>' +
+                               '4. Blue circle shows 1km radius from Mapúa';
+                return div;
+            };
+            instructions.addTo(map);
         });
     </script>
 </body>

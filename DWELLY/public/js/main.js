@@ -301,4 +301,102 @@ if (listingsGrid && loadMoreButton) {
         `;
         return card;
     }
-} 
+}
+
+// Map Initialization
+async function initializeMap() {
+    try {
+        // Check if Leaflet is loaded
+        if (typeof L === 'undefined') {
+            throw new Error('Leaflet library not loaded!');
+        }
+
+        // Get the map container
+        const mapContainer = document.getElementById('listingsMap');
+        if (!mapContainer) {
+            console.log('No map container found on this page');
+            return; // No map container on this page
+        }
+
+        console.log('Map container found:', mapContainer);
+
+        // Remove loading indicator
+        const loadingIndicator = mapContainer.querySelector('.map-loading');
+        if (loadingIndicator) {
+            loadingIndicator.remove();
+        }
+
+        // Get listings data from the page
+        const listingsData = window.listingsData;
+        console.log('Listings data:', listingsData);
+        
+        if (!listingsData || !listingsData.length) {
+            mapContainer.innerHTML = '<div style="text-align: center; padding: 2rem;">No listings with location data available</div>';
+            return;
+        }
+
+        // Initialize map centered on Davao City
+        const map = L.map('listingsMap', {
+            center: [7.0633, 125.5956],
+            zoom: 14,
+            zoomControl: true,
+            attributionControl: true
+        });
+        console.log('Map created');
+        
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+        console.log('Tile layer added');
+
+        // Add markers for each listing with coordinates
+        let markersAdded = 0;
+        const listingsWithCoords = listingsData.filter(l => l.latitude && l.longitude);
+        console.log('Listings with coordinates:', listingsWithCoords);
+
+        if (listingsWithCoords.length === 0) {
+            mapContainer.innerHTML = '<div style="text-align: center; padding: 2rem;">No listings with location data available</div>';
+            return;
+        }
+
+        // Create a bounds object to fit all markers
+        const bounds = L.latLngBounds(listingsWithCoords.map(l => [l.latitude, l.longitude]));
+        
+        listingsWithCoords.forEach(listing => {
+            console.log('Adding marker for listing:', listing.post_id, 'at', listing.latitude, listing.longitude);
+            const marker = L.marker([listing.latitude, listing.longitude]).addTo(map);
+            marker.bindPopup(`
+                <strong>${listing.type}</strong><br>
+                ₱${listing.price ? listing.price.toLocaleString() : 'Price not set'}/month<br>
+                ${listing.barangay}, ${listing.city}<br>
+                <a href="/listings/${listing.post_id}">View Details</a>
+            `);
+            markersAdded++;
+        });
+
+        // Fit map to show all markers
+        map.fitBounds(bounds, { padding: [50, 50] });
+
+        console.log('Total markers added:', markersAdded);
+
+    } catch (error) {
+        console.error('Error initializing map:', error);
+        const mapContainer = document.getElementById('listingsMap');
+        if (mapContainer) {
+            mapContainer.innerHTML = '<div style="text-align: center; padding: 2rem; color: red;">Error loading map: ' + error.message + '</div>';
+        }
+    }
+}
+
+// Initialize map when DOM is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize map if we're on a page with a map
+    if (document.getElementById('listingsMap')) {
+        console.log('Map container found, initializing map...');
+        initializeMap();
+    } else {
+        console.log('No map container found on this page');
+    }
+}); 

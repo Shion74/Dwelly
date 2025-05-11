@@ -33,7 +33,7 @@
         }
         .listings-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
             gap: 2rem;
         }
         .listing-card {
@@ -41,23 +41,63 @@
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             overflow: hidden;
-            transition: transform 0.3s ease;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
         .listing-card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
-        .listing-image {
+        .listing-photo-container {
             width: 100%;
             height: 200px;
+            background-color: #f5f6fa;
+            overflow: hidden;
+        }
+        .listing-photo {
+            width: 100%;
+            height: 100%;
             object-fit: cover;
         }
         .listing-content {
             padding: 1.5rem;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            justify-content: space-between;
+        }
+        .listing-title-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.75rem;
         }
         .listing-title {
             font-size: 1.25rem;
             color: #2c3e50;
-            margin-bottom: 0.5rem;
+            font-weight: 600;
+            line-height: 1.4;
+            margin-bottom: 0;
+        }
+        .listing-price {
+            display: block;
+            font-size: 1.1rem;
+            color: #27ae60;
+            font-weight: bold;
+            margin: 0.5rem 0 0 0;
+            white-space: nowrap;
+        }
+        .listing-location {
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
         }
         .listing-type {
             display: inline-block;
@@ -65,11 +105,6 @@
             background: #e1f0ff;
             color: #3498db;
             border-radius: 15px;
-            font-size: 0.875rem;
-            margin-bottom: 1rem;
-        }
-        .listing-location {
-            color: #7f8c8d;
             font-size: 0.875rem;
             margin-bottom: 1rem;
         }
@@ -120,7 +155,107 @@
             margin-bottom: 1rem;
             color: #2c3e50;
         }
+        .listing-amenities {
+            display: flex;
+            flex-wrap: nowrap;
+            gap: 0.5rem;
+            margin: 0.5rem 0;
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+        .amenity-tag {
+            display: inline-block;
+            align-items: center;
+            gap: 0.25rem;
+            background: #e1f0ff;
+            color: #3498db;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            margin-right: 0.25rem;
+        }
+        .amenity-tag i {
+            font-size: 0.875rem;
+        }
+        .map-container {
+            margin-top: 3rem;
+            padding: 2rem;
+            background: #f8f9fa;
+            border: 2px solid #e9ecef;
+            border-radius: 10px;
+        }
+        .map-container h2 {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: #2c3e50;
+        }
+        #listingsMap {
+            height: 500px !important;
+            width: 100% !important;
+            border: 2px solid #3498db !important;
+            border-radius: 10px !important;
+            background-color: #f8f9fa !important;
+            position: relative !important;
+        }
+        /* Add a loading indicator */
+        .map-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 1000;
+        }
+        .map-loading i {
+            font-size: 2rem;
+            color: #3498db;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .room-type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #e1f0ff;
+            color: #3498db;
+            border-radius: 15px;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        .bathroom-type-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            background: #fff3e0;
+            color: #f39c12;
+            border-radius: 15px;
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        .listing-stats {
+            display: flex;
+            gap: 1.5rem;
+            color: #7f8c8d;
+            font-size: 0.9rem;
+            margin-top: auto;
+            padding-top: 1rem;
+        }
+        .stat {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .stat i {
+            color: #3498db;
+        }
     </style>
+    <!-- Add Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    <!-- Add Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <header>
@@ -145,36 +280,103 @@
     <main>
         <div class="listings-container">
             <% if (listings && listings.length > 0) { %>
-                <div class="listings-grid">
+                <!-- Debug output -->
+                <div style="display: none;">
+                    Debug: <%= listings.length %> listings found
                     <% listings.forEach(function(listing) { %>
-                        <div class="listing-card">
-                            <img src="<%= listing.photos && listing.photos[0] ? listing.photos[0].file_path : '/images/placeholder.jpg' %>" 
-                                 alt="<%= listing.type %>" 
-                                 class="listing-image">
-                            <div class="listing-content">
-                                <h3 class="listing-title"><%= listing.type %></h3>
-                                <span class="listing-type"><%= listing.type %></span>
-                                <p class="listing-location">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <%= listing.city %>, <%= listing.barangay %>
-                                </p>
-                                <div class="listing-meta">
-                                    <div class="listing-rating">
-                                        <i class="fas fa-star"></i>
-                                        <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %>
-                                    </div>
-                                    <% if (user) { %>
-                                        <div class="listing-favorite" 
-                                             data-post-id="<%= listing.post_id %>"
-                                             onclick="toggleFavorite(this)">
-                                            <i class="fas fa-heart <%= userFavorites.includes(listing.post_id) ? 'text-danger' : '' %>"></i>
-                                        </div>
-                                    <% } %>
-                                </div>
-                            </div>
-                        </div>
+                        Listing <%= listing.post_id %>: 
+                        lat=<%= listing.latitude %>, 
+                        lng=<%= listing.longitude %>
                     <% }); %>
                 </div>
+
+                <div class="listings-grid">
+                    <% listings.forEach(function(listing) { %>
+                        <a href="/listings/<%= listing.post_id %>" class="listing-card">
+                            <div class="listing-photo-container">
+                                <% if (listing.photos && listing.photos.length > 0) { %>
+                                    <img src="<%= listing.photos[0] %>" 
+                                         alt="<%= listing.type %>" 
+                                         class="listing-photo"
+                                         onload="this.classList.add('loaded')"
+                                         onerror="this.src='/images/no-image.jpg'; this.classList.add('loaded')">
+                                <% } else { %>
+                                    <div class="photo-placeholder">
+                                        <i class="fas fa-home"></i>
+                                    </div>
+                                <% } %>
+                            </div>
+                            <div class="listing-content">
+                                <h2 class="listing-title"><%= listing.type %></h2>
+                                <div class="listing-location">
+                                    <i class="fas fa-map-marker-alt"></i>
+                                    <%= listing.barangay %>, <%= listing.city %>
+                                </div>
+                                <div class="listing-amenities">
+                                    <% let amenityCount = 0; %>
+                                    <% if (listing.has_wifi && ++amenityCount) { %>
+                                        <span class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</span>
+                                    <% } %>
+                                    <% if (listing.has_cctv && ++amenityCount) { %>
+                                        <span class="amenity-tag"><i class="fas fa-video"></i> CCTV</span>
+                                    <% } %>
+                                    <% if (listing.is_airconditioned && ++amenityCount) { %>
+                                        <span class="amenity-tag"><i class="fas fa-snowflake"></i> AC</span>
+                                    <% } %>
+                                    <% if (listing.has_parking && ++amenityCount) { %>
+                                        <span class="amenity-tag"><i class="fas fa-parking"></i> Parking</span>
+                                    <% } %>
+                                    <% if (listing.has_own_electricity && ++amenityCount) { %>
+                                        <span class="amenity-tag"><i class="fas fa-bolt"></i> Own Meter</span>
+                                    <% } %>
+                                    <% if (listing.has_own_water && ++amenityCount) { %>
+                                        <span class="amenity-tag"><i class="fas fa-tint"></i> Own Water</span>
+                                    <% } %>
+                                    <% if (amenityCount > 4) { %>
+                                        ...
+                                    <% } %>
+                                </div>
+                                <% if (listing.price) { %>
+                                    <span class="listing-price">₱<%= listing.price.toLocaleString() %>/month</span>
+                                <% } %>
+                                <div class="listing-stats">
+                                    <div class="stat">
+                                        <i class="fas fa-bookmark"></i>
+                                        <%= listing.favorite_count %> favorites
+                                    </div>
+                                    <div class="stat">
+                                        <i class="fas fa-star"></i>
+                                        <%= listing.average_rating ? listing.average_rating.toFixed(1) : 'No ratings' %>
+                                        <% if (listing.rating_count > 0) { %>
+                                            (<%= listing.rating_count %>)
+                                        <% } %>
+                                    </div>
+                                </div>
+                            </div>
+                        </a>
+                    <% }); %>
+                </div>
+
+                <!-- Map Section -->
+                <div class="map-container">
+                    <h2>Find Listings Near You</h2>
+                    <div id="listingsMap">
+                        <div class="map-loading">
+                            <i class="fas fa-spinner"></i>
+                            <p>Loading map...</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Debug output for map -->
+                <script>
+                    console.log('Template debug - Listings data:', <%- JSON.stringify(listings.map(l => ({
+                        id: l.post_id,
+                        type: l.type,
+                        lat: l.latitude,
+                        lng: l.longitude
+                    }))) %>);
+                </script>
             <% } else { %>
                 <div class="empty-state">
                     <h2>No Listings Available</h2>
@@ -192,25 +394,22 @@
         <p>&copy; 2024 Dwelly. All rights reserved.</p>
     </footer>
 
+    <!-- Add Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <!-- Pass listings data to JavaScript -->
     <script>
-        async function toggleFavorite(element) {
-            const postId = element.dataset.postId;
-            try {
-                const response = await fetch(`/listings/${postId}/favorite`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                const data = await response.json();
-                if (data.success) {
-                    const heart = element.querySelector('i');
-                    heart.classList.toggle('text-danger');
-                }
-            } catch (error) {
-                console.error('Error toggling favorite:', error);
-            }
-        }
+        window.listingsData = <%- JSON.stringify(listings.map(l => ({
+            post_id: l.post_id,
+            type: l.type,
+            price: l.price,
+            barangay: l.barangay,
+            city: l.city,
+            latitude: l.latitude,
+            longitude: l.longitude
+        }))) %>;
     </script>
+    <!-- Load main.js -->
+    <script src="/js/main.js"></script>
 </body>
 </html> 

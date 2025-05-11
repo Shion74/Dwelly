@@ -11,9 +11,9 @@ const isAuthenticated = (req, res, next) => {
 };
 
 // Home page route - require authentication
-router.get('/', isAuthenticated, (req, res) => {
-    res.redirect('/listings');
-});
+// router.get('/', isAuthenticated, (req, res) => {
+//     res.redirect('/listings');
+// });
 
 // About page route - require authentication
 router.get('/about', isAuthenticated, (req, res) => {

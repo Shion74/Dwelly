@@ -48,9 +48,8 @@
             transition: transform 0.3s ease, box-shadow 0.3s ease;
             text-decoration: none;
             color: inherit;
-            display: block;
-            cursor: pointer;
-            position: relative;
+            display: flex;
+            flex-direction: column;
             height: 100%;
         }
         .listing-card:hover {
@@ -93,13 +92,15 @@
             padding: 1.5rem;
             display: flex;
             flex-direction: column;
-            height: calc(100% - 200px); /* Subtract photo height */
+            flex: 1;
+            justify-content: space-between;
         }
         .listing-title {
             font-size: 1.25rem;
             color: #2c3e50;
-            margin-bottom: 0.5rem;
-            font-weight: bold;
+            margin-bottom: 0.75rem;
+            font-weight: 600;
+            line-height: 1.4;
         }
         .listing-meta {
             color: #7f8c8d;
@@ -110,7 +111,7 @@
             font-size: 1.5rem;
             color: #27ae60;
             font-weight: bold;
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.75rem;
         }
         .listing-location {
             color: #7f8c8d;
@@ -122,12 +123,11 @@
         }
         .listing-stats {
             display: flex;
-            gap: 1rem;
+            gap: 1.5rem;
             color: #7f8c8d;
             font-size: 0.9rem;
             margin-top: auto;
             padding-top: 1rem;
-            border-top: 1px solid #eee;
         }
         .stat {
             display: flex;

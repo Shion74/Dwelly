@@ -170,31 +170,102 @@ if (searchForm && searchInput) {
 }
 
 // Favorites Toggle
-const favoriteButtons = document.querySelectorAll('.favorite-toggle');
-
-favoriteButtons.forEach(button => {
-    button.addEventListener('click', async (e) => {
-        e.preventDefault();
-        const listingId = button.dataset.listingId;
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle favorite button clicks
+    const favoriteBtn = document.getElementById('favoriteBtn');
+    if (favoriteBtn) {
+        // Remove any existing event listeners by cloning the button
+        const newFavoriteBtn = favoriteBtn.cloneNode(true);
+        favoriteBtn.parentNode.replaceChild(newFavoriteBtn, favoriteBtn);
         
-        try {
-            const response = await fetch(`/listings/${listingId}/favorite`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                button.classList.toggle('active');
-                button.querySelector('i').classList.toggle('fas');
-                button.querySelector('i').classList.toggle('far');
+        newFavoriteBtn.addEventListener('click', async function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            const listingId = this.dataset.postId;
+            if (!listingId) {
+                console.error('No listing ID found');
+                return;
             }
-        } catch (error) {
-            console.error('Error toggling favorite:', error);
-        }
-    });
+
+            try {
+                const response = await fetch(`/listings/${listingId}/favorite`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to toggle favorite');
+                }
+
+                const data = await response.json();
+                
+                // Update button state
+                this.classList.toggle('active');
+                this.querySelector('i').classList.toggle('fas');
+                this.querySelector('i').classList.toggle('far');
+                
+                // Update favorite count if it exists
+                const favoriteCount = document.querySelector('.favorite-count');
+                if (favoriteCount) {
+                    favoriteCount.textContent = data.action === 'added' ? 
+                        parseInt(favoriteCount.textContent) + 1 : 
+                        parseInt(favoriteCount.textContent) - 1;
+                }
+
+                // If we're on the favorites page, remove the card if unfavorited
+                if (data.action === 'removed' && window.location.pathname === '/favorites') {
+                    const card = this.closest('.listing-card');
+                    if (card) {
+                        card.style.opacity = '0';
+                        setTimeout(() => {
+                            card.remove();
+                            // Check if there are any listings left
+                            const remainingCards = document.querySelectorAll('.listing-card');
+                            if (remainingCards.length === 0) {
+                                const grid = document.querySelector('.listings-grid');
+                                if (grid) {
+                                    grid.innerHTML = `
+                                        <div class="empty-state">
+                                            <h2>No Favorite Listings Yet</h2>
+                                            <p>Start adding listings to your favorites!</p>
+                                        </div>
+                                    `;
+                                }
+                            }
+                        }, 300);
+                    }
+                }
+            } catch (error) {
+                console.error('Error toggling favorite:', error);
+                alert('Failed to update favorite status. Please try again.');
+            }
+        });
+    }
+
+    // Handle rate button clicks
+    const rateBtn = document.getElementById('rateBtn');
+    if (rateBtn) {
+        rateBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Add rating functionality here
+            console.log('Rate button clicked');
+        });
+    }
+
+    // Handle report button clicks
+    const reportBtn = document.getElementById('reportBtn');
+    if (reportBtn) {
+        reportBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            // Add report functionality here
+            console.log('Report button clicked');
+        });
+    }
 });
 
 // Report Listing

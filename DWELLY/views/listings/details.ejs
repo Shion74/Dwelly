@@ -150,26 +150,30 @@
         }
 
         .photo-actions {
+            position: relative;
+            z-index: 1000;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
             display: flex;
             gap: 1rem;
             margin-top: 1rem;
             padding: 0.5rem;
-            background: white;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            pointer-events: auto;
         }
 
         .action-icon {
-            display: flex;
+            display: inline-flex;
             align-items: center;
             gap: 0.5rem;
             padding: 0.5rem 1rem;
             border: none;
             border-radius: 5px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
             background: none;
             color: #7f8c8d;
+            font-size: 1rem;
         }
 
         .action-icon:hover {
@@ -177,8 +181,26 @@
             color: #3498db;
         }
 
-        .action-icon.active {
+        .action-icon#favoriteBtn {
+            color: #7f8c8d;
+        }
+
+        .action-icon#favoriteBtn:hover {
             color: #e74c3c;
+            background: #fef2f2;
+        }
+
+        .action-icon#favoriteBtn.active {
+            color: #e74c3c;
+            background: #fef2f2;
+        }
+
+        .action-icon#favoriteBtn.active i {
+            color: #e74c3c;
+        }
+
+        .action-icon#favoriteBtn.active:hover {
+            background: #fee2e2;
         }
 
         .action-icon i {
@@ -196,10 +218,14 @@
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
             justify-content: center;
             align-items: center;
+        }
+
+        .rating-modal.active {
+            display: flex;
         }
 
         .rating-content {
@@ -208,18 +234,25 @@
             border-radius: 10px;
             width: 90%;
             max-width: 400px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
         }
 
         .rating-stars {
             display: flex;
             gap: 0.5rem;
-            margin: 1rem 0;
-            font-size: 1.5rem;
+            margin: 1.5rem 0;
+            font-size: 2rem;
+            justify-content: center;
         }
 
         .rating-stars i {
             cursor: pointer;
             color: #ddd;
+            transition: all 0.2s ease;
+        }
+
+        .rating-stars i:hover {
+            transform: scale(1.1);
         }
 
         .rating-stars i.active {
@@ -230,7 +263,61 @@
             display: flex;
             justify-content: flex-end;
             gap: 1rem;
-            margin-top: 1rem;
+            margin-top: 1.5rem;
+        }
+
+        .modal-buttons button {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.2s ease;
+        }
+
+        .modal-buttons .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+
+        .modal-buttons .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+
+        .modal-buttons .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+
+        .modal-buttons .btn-primary:hover {
+            background: #2980b9;
+        }
+
+        .modal-buttons .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .modal-buttons .btn-danger:hover {
+            background: #c0392b;
+        }
+
+        textarea {
+            width: 100%;
+            min-height: 100px;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            resize: vertical;
+            font-family: inherit;
+            font-size: 1rem;
+            margin: 1rem 0;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
         }
 
         .photo-viewer-modal {
@@ -359,26 +446,28 @@
                     <% } %>
 
                     <% if (user) { %>
-                        <div class="photo-actions">
+                        <div class="action-buttons" style="display: flex; gap: 1rem; margin-top: 2rem;">
                             <% if (user.id !== listing.user_id) { %>
-                                <button class="action-icon <%= isFavorited ? 'active' : '' %>" id="favoriteBtn" data-post-id="<%= listing.post_id %>">
+                                <button class="action-icon <%= isFavorited ? 'active' : '' %>" id="favoriteBtn" data-post-id="<%= listing.post_id %>" style="z-index: 1001; position: relative; pointer-events: auto; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; transition: all 0.3s ease; background: none; color: #7f8c8d;">
                                     <i class="fas fa-bookmark"></i>
                                     <span><%= listing.favorite_count || 0 %></span>
                                 </button>
-                                <button class="action-icon" id="rateBtn">
+                                <button class="action-icon" id="rateBtn" style="z-index: 1001; position: relative; pointer-events: auto; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; transition: all 0.3s ease; background: none; color: #7f8c8d;">
                                     <i class="fas fa-star"></i>
                                     <span><%= listing.average_rating ? listing.average_rating.toFixed(1) : 'Rate' %></span>
                                 </button>
-                                <button class="action-icon" id="reportBtn">
+                                <button class="action-icon" id="reportBtn" style="z-index: 1001; position: relative; pointer-events: auto; display: flex; align-items: center; gap: 0.5rem; padding: 0.5rem 1rem; border: none; border-radius: 5px; cursor: pointer; transition: all 0.3s ease; background: none; color: #7f8c8d;">
                                     <i class="fas fa-flag"></i>
                                 </button>
                             <% } else { %>
-                                <button class="action-icon" id="editBtn" data-post-id="<%= listing.post_id %>">
-                                    <i class="fas fa-edit"></i>
-                                </button>
-                                <button class="action-icon" id="deleteBtn" data-post-id="<%= listing.post_id %>">
-                                    <i class="fas fa-trash"></i>
-                                </button>
+                                <a href="/listings/<%= listing.post_id %>/edit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; transition: background-color 0.3s ease; text-decoration: none; display: inline-block; text-align: center; background: #3498db; color: white;">
+                                    <i class="fas fa-edit"></i> Edit
+                                </a>
+                                <form action="/listings/<%= listing.post_id %>/delete" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-danger" style="padding: 0.75rem 1.5rem; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; transition: background-color 0.3s ease; text-decoration: none; display: inline-block; text-align: center; background: #e74c3c; color: white;" onclick="return confirm('Are you sure you want to delete this listing?');">
+                                        <i class="fas fa-trash"></i> Delete
+                                    </button>
+                                </form>
                             <% } %>
                         </div>
                     <% } %>
@@ -387,7 +476,12 @@
                     <div class="info-section" style="margin-top: 2rem;">
                         <h3>Map</h3>
                         <% if (listing.latitude && listing.longitude) { %>
-                            <div id="listingMap" style="height: 400px; width: 100%; border: 2px solid #3498db; border-radius: 10px; background-color: #f8f9fa;"></div>
+                            <div id="listingMap" 
+                                 data-lat="<%= listing.latitude %>" 
+                                 data-lng="<%= listing.longitude %>"
+                                 data-popup="<%= listing.barangay + ', ' + listing.city %>"
+                                 style="height: 400px; width: 100%; border: 2px solid #3498db; border-radius: 10px; background-color: #f8f9fa;">
+                            </div>
                         <% } else { %>
                             <div style="padding: 2rem; color: #7f8c8d; text-align: center;">No location set for this listing.</div>
                         <% } %>
@@ -527,20 +621,377 @@
         <p>&copy; 2024 Dwelly. All rights reserved.</p>
     </footer>
 
+    <!-- Rating Modal -->
+    <div id="ratingModal" class="rating-modal">
+        <div class="rating-content">
+            <h3>Rate this Listing</h3>
+            <div class="rating-stars">
+                <i class="far fa-star" data-rating="1"></i>
+                <i class="far fa-star" data-rating="2"></i>
+                <i class="far fa-star" data-rating="3"></i>
+                <i class="far fa-star" data-rating="4"></i>
+                <i class="far fa-star" data-rating="5"></i>
+            </div>
+            <div class="modal-buttons">
+                <button class="btn btn-secondary" id="cancelRating">Cancel</button>
+                <button class="btn btn-primary" id="submitRating">Submit Rating</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Report Modal -->
+    <div id="reportModal" class="rating-modal">
+        <div class="rating-content">
+            <h3>Report Listing</h3>
+            <form id="reportForm">
+                <div style="margin-bottom: 1rem;">
+                    <label><input type="radio" name="reportType" value="occupied" required> Occupied</label><br>
+                    <label><input type="radio" name="reportType" value="scam"> Scam</label><br>
+                    <label><input type="radio" name="reportType" value="other"> Other</label>
+                </div>
+                <textarea id="reportReason" placeholder="Please describe the reason (required for 'Other')..." style="width: 100%; min-height: 100px; margin: 1rem 0; padding: 0.5rem; display: none;"></textarea>
+                <div class="modal-buttons">
+                    <button type="button" class="btn btn-secondary" id="cancelReport">Cancel</button>
+                    <button type="submit" class="btn btn-danger" id="submitReport">Submit Report</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
     <script>
     document.addEventListener('DOMContentLoaded', function() {
-        (function() {
-            <% if (listing.latitude && listing.longitude) { %>
-            var lat = <%= listing.latitude %>;
-            var lng = <%= listing.longitude %>;
-            var popupText = "<%= listing.barangay + ', ' + listing.city %>";
-            var map = L.map('listingMap').setView([lat, lng], 15);
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap contributors' }).addTo(map);
-            L.marker([lat, lng]).addTo(map).bindPopup(popupText).openPopup();
-            setTimeout(function() { map.invalidateSize(); }, 100);
-            <% } %>
-        })();
+        const mapElement = document.getElementById('listingMap');
+        if (!mapElement) return;
+
+        // Get coordinates from data attributes
+        const lat = parseFloat(mapElement.dataset.lat);
+        const lng = parseFloat(mapElement.dataset.lng);
+        const popupText = mapElement.dataset.popup;
+        
+        // Create and configure map
+        const map = L.map('listingMap').setView([lat, lng], 15);
+        
+        // Add tile layer
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+        
+        // Add marker with popup
+        L.marker([lat, lng])
+            .addTo(map)
+            .bindPopup(popupText)
+            .openPopup();
+        
+        // Ensure map renders correctly
+        setTimeout(() => map.invalidateSize(), 100);
+    });
+    </script>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Helper function to show modal
+        function showModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'flex';
+                // Add click outside to close
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                        hideModal(modalId);
+                    }
+                });
+            }
+        }
+
+        // Helper function to hide modal
+        function hideModal(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) {
+                modal.style.display = 'none';
+            }
+        }
+
+        // Favorite Button Functionality
+        const favoriteBtn = document.getElementById('favoriteBtn');
+        if (favoriteBtn) {
+            // Set initial state if already favorited
+            if (favoriteBtn.classList.contains('active')) {
+                favoriteBtn.style.color = '#e74c3c';
+                const icon = favoriteBtn.querySelector('i');
+                if (icon) {
+                    icon.style.color = '#e74c3c';
+                }
+            }
+
+            favoriteBtn.addEventListener('click', async function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const listingId = this.dataset.postId;
+                if (!listingId) {
+                    console.error('No listing ID found');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/listings/${listingId}/favorite`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        }
+                    });
+
+                    if (!response.ok) throw new Error('Failed to toggle favorite');
+                    
+                    const data = await response.json();
+                    
+                    // Update button state
+                    this.classList.toggle('active');
+                    const icon = this.querySelector('i');
+                    if (icon) {
+                        icon.classList.toggle('fas');
+                        icon.classList.toggle('far');
+                        // Update icon color
+                        icon.style.color = this.classList.contains('active') ? '#e74c3c' : '#7f8c8d';
+                    }
+                    
+                    // Update button color
+                    this.style.color = this.classList.contains('active') ? '#e74c3c' : '#7f8c8d';
+                    
+                    // Update favorite count
+                    const countSpan = this.querySelector('span');
+                    if (countSpan) {
+                        const currentCount = parseInt(countSpan.textContent);
+                        countSpan.textContent = data.action === 'added' ? currentCount + 1 : currentCount - 1;
+                    }
+
+                    // If on favorites page and removed, remove the listing card
+                    if (data.action === 'removed' && window.location.pathname === '/favorites') {
+                        const card = this.closest('.listing-card');
+                        if (card) {
+                            card.style.opacity = '0';
+                            setTimeout(() => {
+                                card.remove();
+                                const remainingCards = document.querySelectorAll('.listing-card');
+                                if (remainingCards.length === 0) {
+                                    const grid = document.querySelector('.listings-grid');
+                                    if (grid) {
+                                        grid.innerHTML = '<div class="empty-state"><h2>No Favorite Listings Yet</h2><p>Start adding listings to your favorites!</p></div>';
+                                    }
+                                }
+                            }, 300);
+                        }
+                    }
+                } catch (err) {
+                    console.error('Error toggling favorite:', err);
+                    alert('Failed to update favorite status. Please try again.');
+                }
+            });
+        }
+
+        // Rating Button Functionality
+        const rateBtn = document.getElementById('rateBtn');
+        const ratingModal = document.getElementById('ratingModal');
+        const cancelRating = document.getElementById('cancelRating');
+        const submitRating = document.getElementById('submitRating');
+        let selectedRating = 0;
+
+        if (rateBtn && ratingModal) {
+            // Show rating modal
+            rateBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showModal('ratingModal');
+            });
+
+            // Handle star selection
+            const stars = ratingModal.querySelectorAll('.rating-stars i');
+            stars.forEach(star => {
+                star.addEventListener('mouseover', function() {
+                    const rating = parseInt(this.dataset.rating);
+                    updateStars(rating);
+                });
+
+                star.addEventListener('click', function() {
+                    selectedRating = parseInt(this.dataset.rating);
+                    updateStars(selectedRating);
+                });
+            });
+
+            ratingModal.querySelector('.rating-stars').addEventListener('mouseleave', function() {
+                updateStars(selectedRating);
+            });
+
+            // Cancel rating
+            cancelRating.addEventListener('click', function() {
+                hideModal('ratingModal');
+                selectedRating = 0;
+                updateStars(0);
+            });
+
+            // Submit rating
+            submitRating.addEventListener('click', async function() {
+                if (!selectedRating) {
+                    alert('Please select a rating');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/listings/${favoriteBtn.dataset.postId}/rate`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            stars: selectedRating,
+                            comment: '' // Optional comment field
+                        })
+                    });
+
+                    if (!response.ok) {
+                        const data = await response.json();
+                        throw new Error(data.error || 'Failed to submit rating');
+                    }
+                    
+                    const data = await response.json();
+                    
+                    // Update rating display
+                    const ratingSpan = rateBtn.querySelector('span');
+                    if (ratingSpan) {
+                        // Find the statistics section and rating info
+                        const statsSections = document.querySelectorAll('.info-section');
+                        let ratingCount = 0;
+                        let currentAverage = 0;
+
+                        // Find the statistics section
+                        statsSections.forEach(section => {
+                            const heading = section.querySelector('h3');
+                            if (heading && heading.textContent === 'Statistics') {
+                                // Find the rating field
+                                const ratingField = section.querySelector('.info-field');
+                                if (ratingField) {
+                                    const ratingValue = ratingField.querySelector('.info-value');
+                                    if (ratingValue) {
+                                        const ratingText = ratingValue.textContent;
+                                        // Extract current average and count
+                                        const match = ratingText.match(/(\d+\.?\d*)\/5\.0\s*\((\d+)/);
+                                        if (match) {
+                                            currentAverage = parseFloat(match[1]);
+                                            ratingCount = parseInt(match[2]);
+                                        }
+                                    }
+                                }
+                            }
+                        });
+
+                        // Calculate new average
+                        const newCount = ratingCount + 1;
+                        const newAverage = ((currentAverage * ratingCount) + selectedRating) / newCount;
+                        
+                        // Update the rating display
+                        ratingSpan.textContent = newAverage.toFixed(1);
+
+                        // Update the statistics section
+                        statsSections.forEach(section => {
+                            const heading = section.querySelector('h3');
+                            if (heading && heading.textContent === 'Statistics') {
+                                const ratingField = section.querySelector('.info-field:nth-child(2)');
+                                if (ratingField) {
+                                    const ratingValue = ratingField.querySelector('.info-value');
+                                    if (ratingValue) {
+                                        ratingValue.textContent = `${newAverage.toFixed(1)}/5.0 (${newCount} reviews)`;
+                                    }
+                                }
+                            }
+                        });
+                    }
+
+                    hideModal('ratingModal');
+                    selectedRating = 0;
+                    updateStars(0);
+                    
+                    // Show success message
+                    alert('Rating submitted successfully!');
+                } catch (err) {
+                    console.error('Error submitting rating:', err);
+                    alert(err.message || 'Failed to submit rating. Please try again.');
+                }
+            });
+        }
+
+        // Report Button Functionality
+        const reportBtn = document.getElementById('reportBtn');
+        const reportModal = document.getElementById('reportModal');
+        const cancelReport = document.getElementById('cancelReport');
+        const reportForm = document.getElementById('reportForm');
+        const reportReason = document.getElementById('reportReason');
+
+        if (reportBtn && reportModal) {
+            // Show report modal
+            reportBtn.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                showModal('reportModal');
+            });
+
+            // Cancel report
+            cancelReport.addEventListener('click', function() {
+                hideModal('reportModal');
+                reportReason.value = '';
+                reportReason.style.display = 'none';
+                reportForm.reset();
+            });
+
+            // Show/hide reason textarea for 'Other'
+            reportForm.addEventListener('change', function(e) {
+                const selected = reportForm.reportType.value;
+                reportReason.style.display = selected === 'other' ? 'block' : 'none';
+            });
+
+            // Submit report
+            reportForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                const type = reportForm.reportType.value;
+                const reason = reportReason.value.trim();
+                if (type === 'other' && !reason) {
+                    alert('Please provide a reason for "Other".');
+                    return;
+                }
+                try {
+                    const response = await fetch(`/listings/${favoriteBtn.dataset.postId}/report`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ type, reason })
+                    });
+                    if (!response.ok) throw new Error('Failed to submit report');
+                    alert('Thank you for your report. We will review it shortly.');
+                    hideModal('reportModal');
+                    reportReason.value = '';
+                    reportReason.style.display = 'none';
+                    reportForm.reset();
+                } catch (err) {
+                    console.error('Error submitting report:', err);
+                    alert('Failed to submit report. Please try again.');
+                }
+            });
+        }
+
+        // Helper function to update star display
+        function updateStars(rating) {
+            const stars = ratingModal.querySelectorAll('.rating-stars i');
+            stars.forEach((star, index) => {
+                if (index < rating) {
+                    star.classList.remove('far');
+                    star.classList.add('fas', 'active');
+                } else {
+                    star.classList.remove('fas', 'active');
+                    star.classList.add('far');
+                }
+            });
+        }
     });
     </script>
 </body>

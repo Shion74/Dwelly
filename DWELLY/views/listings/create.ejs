@@ -347,6 +347,14 @@
                                     <label for="has_own_water">Own Water Meter</label>
                                 </div>
                             </div>
+                            <div class="form-group" style="margin-top:1rem;">
+                                <label class="form-label">Other Amenities</label>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <input type="text" id="customAmenityInput" class="form-control" placeholder="Add custom amenity...">
+                                    <button type="button" id="addCustomAmenity" class="btn btn-secondary">Add</button>
+                                </div>
+                                <div id="customAmenitiesList" style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -630,6 +638,58 @@
                 return div;
             };
             instructions.addTo(map);
+
+            // Custom amenities logic
+            const customAmenityInput = document.getElementById('customAmenityInput');
+            const addCustomAmenityBtn = document.getElementById('addCustomAmenity');
+            const customAmenitiesList = document.getElementById('customAmenitiesList');
+
+            let customAmenities = [];
+
+            addCustomAmenityBtn.addEventListener('click', function() {
+                const value = customAmenityInput.value.trim();
+                if (value && !customAmenities.includes(value)) {
+                    customAmenities.push(value);
+                    renderCustomAmenities();
+                    customAmenityInput.value = '';
+                }
+            });
+
+            function renderCustomAmenities() {
+                customAmenitiesList.innerHTML = '';
+                customAmenities.forEach((amenity, idx) => {
+                    const tag = document.createElement('span');
+                    tag.className = 'amenity-tag';
+                    tag.textContent = amenity;
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.textContent = '×';
+                    removeBtn.style.marginLeft = '0.5rem';
+                    removeBtn.style.background = 'none';
+                    removeBtn.style.border = 'none';
+                    removeBtn.style.color = '#e74c3c';
+                    removeBtn.style.cursor = 'pointer';
+                    removeBtn.onclick = function() {
+                        customAmenities.splice(idx, 1);
+                        renderCustomAmenities();
+                    };
+                    tag.appendChild(removeBtn);
+                    customAmenitiesList.appendChild(tag);
+                });
+            }
+
+            // On form submit, add custom amenities as hidden inputs
+            listingForm.addEventListener('submit', function() {
+                // Remove any previous hidden inputs
+                document.querySelectorAll('input[name="custom_amenities[]"]').forEach(e => e.remove());
+                customAmenities.forEach(amenity => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'custom_amenities[]';
+                    input.value = amenity;
+                    listingForm.appendChild(input);
+                });
+            });
         });
     </script>
 </body>

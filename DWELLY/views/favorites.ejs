@@ -5,168 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
-    <style>
-        html, body {
-            height: 100%;
-            margin: 0;
-        }
-        body {
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-        main {
-            flex: 1 0 auto;
-            padding-bottom: 2rem;
-        }
-        footer {
-            flex-shrink: 0;
-            background: #2c3e50;
-            color: white;
-            text-align: center;
-            padding: 1rem;
-            margin-top: auto;
-            width: 100%;
-            position: relative;
-            bottom: 0;
-        }
-        .listings-container {
-            max-width: 1200px;
-            margin: 2rem auto;
-            padding: 0 2rem;
-        }
-        .listings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-            gap: 2rem;
-        }
-        .listing-card {
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            overflow: hidden;
-            min-height: 400px;
-            display: flex;
-            flex-direction: column;
-            text-decoration: none;
-            color: inherit;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .listing-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        }
-        .listing-photo-container {
-            width: 100%;
-            height: 200px;
-            background-color: #f5f6fa;
-            overflow: hidden;
-        }
-        .listing-photo {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            opacity: 0;
-            transition: opacity 0.3s ease;
-        }
-        .listing-photo.loaded {
-            opacity: 1;
-        }
-        .photo-placeholder {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background-color: #f5f6fa;
-            color: #95a5a6;
-        }
-        .photo-placeholder i {
-            font-size: 2rem;
-        }
-        .listing-title {
-            font-size: 1.25rem;
-            color: #2c3e50;
-            font-weight: 600;
-            line-height: 1.4;
-            margin-bottom: 0;
-        }
-        .listing-location {
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            margin-bottom: 1rem;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .listing-amenities {
-            display: flex;
-            flex-wrap: nowrap;
-            gap: 0.5rem;
-            margin: 0.5rem 0;
-            overflow: hidden;
-            white-space: nowrap;
-            text-overflow: ellipsis;
-            width: 100%;
-        }
-        .amenity-tag {
-            display: inline-block;
-            align-items: center;
-            gap: 0.25rem;
-            background: #e1f0ff;
-            color: #3498db;
-            border-radius: 15px;
-            font-size: 0.75rem;
-            padding: 0.25rem 0.5rem;
-            margin-right: 0.25rem;
-        }
-        .amenity-tag i {
-            font-size: 0.875rem;
-        }
-        .listing-price {
-            display: block;
-            font-size: 0.625rem;
-            color: #27ae60;
-            font-weight: bold;
-            margin: 0.5rem 0 0 0;
-            white-space: nowrap;
-        }
-        .listing-stats {
-            display: flex;
-            gap: 1.5rem;
-            color: #7f8c8d;
-            font-size: 0.9rem;
-            margin-top: auto;
-            padding-top: 1rem;
-        }
-        .stat {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-        }
-        .stat i {
-            color: #3498db;
-        }
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: #7f8c8d;
-        }
-        .page-title {
-            text-align: center;
-            color: #2c3e50;
-            margin: 2rem 0;
-        }
-        .listing-title-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.75rem;
-        }
-    </style>
+    <!-- Add Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
 <body>
     <header>
@@ -202,41 +42,54 @@
                                         <i class="fas fa-home"></i>
                                     </div>
                                 <% } %>
+                                <% if (listing.status === 'available') { %>
+                                    <span class="status-badge available-badge">Available</span>
+                                <% } %>
                             </div>
                             <div class="listing-content">
-                                <div class="listing-title-row">
+                                <div>
                                     <h2 class="listing-title"><%= listing.type %></h2>
+                                    <div class="listing-meta">
+                                        Posted by <%= listing.poster_name %> • 
+                                        <%= new Date(listing.created_at).toLocaleDateString() %>
+                                    </div>
+                                    <% if (listing.room_type) { %>
+                                        <span class="room-type-badge"><i class="fas fa-door-open"></i> <%= listing.room_type %></span>
+                                    <% } %>
+                                    <% if (listing.bathroom_type) { %>
+                                        <span class="bathroom-type-badge"><i class="fas fa-bath"></i> <%= listing.bathroom_type %></span>
+                                    <% } %>
                                     <% if (listing.price) { %>
-                                        <span class="listing-price">₱<%= listing.price.toLocaleString() %>/month</span>
+                                        <div class="listing-price">₱<%= listing.price.toLocaleString() %>/month</div>
                                     <% } %>
-                                </div>
-                                <div class="listing-location">
-                                    <i class="fas fa-map-marker-alt"></i>
-                                    <%= listing.barangay %>, <%= listing.city %>
-                                </div>
-                                <div class="listing-amenities">
-                                    <% let amenityCount = 0; %>
-                                    <% if (listing.has_wifi && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</span>
-                                    <% } %>
-                                    <% if (listing.has_cctv && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-video"></i> CCTV</span>
-                                    <% } %>
-                                    <% if (listing.is_airconditioned && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-snowflake"></i> AC</span>
-                                    <% } %>
-                                    <% if (listing.has_parking && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-parking"></i> Parking</span>
-                                    <% } %>
-                                    <% if (listing.has_own_electricity && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-bolt"></i> Own Meter</span>
-                                    <% } %>
-                                    <% if (listing.has_own_water && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-tint"></i> Own Water</span>
-                                    <% } %>
-                                    <% if (amenityCount > 4) { %>
-                                        ...
-                                    <% } %>
+                                    <div class="listing-location">
+                                        <i class="fas fa-map-marker-alt"></i>
+                                        <%= listing.barangay %>, <%= listing.city %>
+                                    </div>
+                                    <div class="listing-amenities">
+                                        <% let amenityCount = 0; %>
+                                        <% if (listing.has_wifi && ++amenityCount) { %>
+                                            <span class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</span>
+                                        <% } %>
+                                        <% if (listing.has_cctv && ++amenityCount) { %>
+                                            <span class="amenity-tag"><i class="fas fa-video"></i> CCTV</span>
+                                        <% } %>
+                                        <% if (listing.is_airconditioned && ++amenityCount) { %>
+                                            <span class="amenity-tag"><i class="fas fa-snowflake"></i> AC</span>
+                                        <% } %>
+                                        <% if (listing.has_parking && ++amenityCount) { %>
+                                            <span class="amenity-tag"><i class="fas fa-parking"></i> Parking</span>
+                                        <% } %>
+                                        <% if (listing.has_own_electricity && ++amenityCount) { %>
+                                            <span class="amenity-tag"><i class="fas fa-bolt"></i> Own Meter</span>
+                                        <% } %>
+                                        <% if (listing.has_own_water && ++amenityCount) { %>
+                                            <span class="amenity-tag"><i class="fas fa-tint"></i> Own Water</span>
+                                        <% } %>
+                                        <% if (amenityCount > 4) { %>
+                                            ...
+                                        <% } %>
+                                    </div>
                                 </div>
                                 <div class="listing-stats">
                                     <div class="stat">

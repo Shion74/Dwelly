@@ -239,6 +239,18 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
                 ]
             );
 
+            // Insert custom amenities
+            if (req.body['custom_amenities[]']) {
+                let customAmenities = req.body['custom_amenities[]'];
+                if (!Array.isArray(customAmenities)) customAmenities = [customAmenities];
+                for (const amenity of customAmenities) {
+                    await connection.query(
+                        'INSERT INTO post_amenities (post_id, amenity_name) VALUES (?, ?)',
+                        [postId, amenity]
+                    );
+                }
+            }
+
             // Insert photos
             for (const file of req.files) {
                 await connection.query(
@@ -441,22 +453,45 @@ router.post('/:id/rate', isAuthenticated, async (req, res) => {
 // Report a listing
 router.post('/:id/report', isAuthenticated, async (req, res) => {
     try {
-        const { reason } = req.body;
+        const { type, reason } = req.body;
+        if (!type || !['occupied', 'scam', 'other'].includes(type)) {
+            return res.status(400).json({ error: 'Invalid report type' });
+        }
+        if (type === 'other' && (!reason || reason.trim() === '')) {
+            return res.status(400).json({ error: 'Reason required for "Other"' });
+        }
 
         // Check if user has already reported this post
         const [existingReports] = await pool.query(
             'SELECT * FROM reports WHERE reporter_id = ? AND post_id = ?',
             [req.session.user.id, req.params.id]
         );
-
         if (existingReports.length > 0) {
             return res.status(400).json({ error: 'You have already reported this listing' });
         }
 
         await pool.query(
-            'INSERT INTO reports (post_id, reporter_id, reason) VALUES (?, ?, ?)',
-            [req.params.id, req.session.user.id, reason]
+            'INSERT INTO reports (post_id, reporter_id, reason, type) VALUES (?, ?, ?, ?)',
+            [req.params.id, req.session.user.id, reason, type]
         );
+
+        // Count reports of each type for this post
+        const [[occupiedCount]] = await pool.query(
+            'SELECT COUNT(*) as count FROM reports WHERE post_id = ? AND type = "occupied"',
+            [req.params.id]
+        );
+        const [[scamCount]] = await pool.query(
+            'SELECT COUNT(*) as count FROM reports WHERE post_id = ? AND type = "scam"',
+            [req.params.id]
+        );
+
+        // Archive if 5 or more reports of either type
+        if (occupiedCount.count >= 5 || scamCount.count >= 5) {
+            await pool.query(
+                'UPDATE posts SET status = "archived" WHERE post_id = ?',
+                [req.params.id]
+            );
+        }
 
         res.json({ success: true });
     } catch (error) {

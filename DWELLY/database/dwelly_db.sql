@@ -67,6 +67,8 @@ CREATE TABLE posts (
     user_id INT NOT NULL,
     type_id INT NOT NULL,
     description TEXT,
+    -- Search-related columns
+    search_keywords TEXT,
     -- Detailed address fields
     city VARCHAR(100) NOT NULL,
     barangay VARCHAR(100) NOT NULL,
@@ -78,8 +80,15 @@ CREATE TABLE posts (
     contact_number VARCHAR(20) NOT NULL,
     social_link VARCHAR(255),
     maps_link VARCHAR(255),
+    -- Location coordinates
+    latitude DECIMAL(10, 8),
+    longitude DECIMAL(11, 8),
     price DECIMAL(10,2),
+    -- Price range for filtering
+    price_range ENUM('below_3000', '3000_to_5000', '5000_to_8000', '8000_to_12000', 'above_12000'),
     availability_status ENUM('available', 'rented', 'reserved') DEFAULT 'available',
+    -- Status for advanced reporting/archiving
+    status ENUM('available', 'occupied', 'archived') NOT NULL DEFAULT 'available',
     is_flagged BOOLEAN DEFAULT FALSE,
     is_deleted TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -88,7 +97,34 @@ CREATE TABLE posts (
     -- Indexes for location-based searches
     INDEX idx_location_city (city),
     INDEX idx_location_barangay (barangay),
-    INDEX idx_user (user_id)
+    INDEX idx_user (user_id),
+    INDEX idx_coordinates (latitude, longitude),
+    -- Fulltext index for search
+    FULLTEXT INDEX idx_search (description, search_keywords, city, barangay, street)
+);
+
+-- Create rooms table for room details and amenities
+CREATE TABLE rooms (
+    room_id INT PRIMARY KEY AUTO_INCREMENT,
+    post_id INT NOT NULL,
+    number_of_rooms INT NOT NULL,
+    bathroom_type ENUM('common', 'own') NOT NULL,
+    room_type ENUM('bare', 'semi_furnished', 'furnished') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
+    INDEX idx_post (post_id)
+);
+
+-- Create post_amenities table for custom amenities per post
+CREATE TABLE post_amenities (
+    amenity_id INT PRIMARY KEY AUTO_INCREMENT,
+    post_id INT NOT NULL,
+    amenity_name VARCHAR(100) NOT NULL,
+    amenity_type ENUM('default', 'custom') DEFAULT 'custom',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
+    INDEX idx_post (post_id),
+    INDEX idx_type (amenity_type)
 );
 
 -- Create contacts table for post contacts
@@ -132,14 +168,13 @@ CREATE TABLE ratings (
     rating_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     post_id INT NOT NULL,
-    rating_type ENUM('overall', 'cleanliness', 'landlord', 'price', 'location') NOT NULL,
     stars INT NOT NULL CHECK (stars >= 1 AND stars <= 5),
     comment TEXT,
     is_deleted TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
-    UNIQUE KEY unique_user_post_rating (user_id, post_id, rating_type),
+    UNIQUE KEY unique_user_post_rating (user_id, post_id),
     INDEX idx_post (post_id)
 );
 
@@ -149,6 +184,7 @@ CREATE TABLE reports (
     post_id INT NOT NULL,
     reporter_id INT NOT NULL,
     reason TEXT NOT NULL,
+    type ENUM('occupied', 'scam', 'other') NOT NULL,
     is_deleted TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
@@ -228,4 +264,47 @@ INSERT INTO courses (name, department_id) VALUES
 
 -- Create a default admin account (password should be hashed in the application)
 INSERT INTO users (email, password, full_name, role, id_number, phone_number) VALUES 
-('admin@dwelly.com', '$2a$10$your_hashed_password_here', 'System Admin', 'admin', 'ADMIN0001', '1234567890'); 
+('admin@dwelly.com', '$2b$10$eRov6e4cRZfk9CFmCBuiTusd9MkXzZvaar2hddxvNKFHUjdamIhbm', 'System Admin', 'admin', 'ADMIN0001', '1234567890');
+
+-- Create triggers to automatically update price_range based on price
+DELIMITER $$
+
+CREATE TRIGGER update_price_range
+BEFORE INSERT ON posts
+FOR EACH ROW
+BEGIN
+    IF NEW.price IS NOT NULL THEN
+        IF NEW.price < 3000 THEN
+            SET NEW.price_range = 'below_3000';
+        ELSEIF NEW.price <= 5000 THEN
+            SET NEW.price_range = '3000_to_5000';
+        ELSEIF NEW.price <= 8000 THEN
+            SET NEW.price_range = '5000_to_8000';
+        ELSEIF NEW.price <= 12000 THEN
+            SET NEW.price_range = '8000_to_12000';
+        ELSE
+            SET NEW.price_range = 'above_12000';
+        END IF;
+    END IF;
+END$$
+
+CREATE TRIGGER update_price_range_on_update
+BEFORE UPDATE ON posts
+FOR EACH ROW
+BEGIN
+    IF NEW.price IS NOT NULL THEN
+        IF NEW.price < 3000 THEN
+            SET NEW.price_range = 'below_3000';
+        ELSEIF NEW.price <= 5000 THEN
+            SET NEW.price_range = '3000_to_5000';
+        ELSEIF NEW.price <= 8000 THEN
+            SET NEW.price_range = '5000_to_8000';
+        ELSEIF NEW.price <= 12000 THEN
+            SET NEW.price_range = '8000_to_12000';
+        ELSE
+            SET NEW.price_range = 'above_12000';
+        END IF;
+    END IF;
+END$$
+
+DELIMITER ; 

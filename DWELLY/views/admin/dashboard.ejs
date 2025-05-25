@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .admin-sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .admin-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 2rem;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        
+        .admin-header {
+            background: #34495e;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #34495e;
+        }
+        
+        .admin-header h2 {
+            margin: 0;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .admin-nav {
+            padding: 0;
+        }
+        
+        .admin-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .admin-nav li {
+            border-bottom: 1px solid #34495e;
+        }
+        
+        .admin-nav a {
+            display: block;
+            padding: 1rem 1.5rem;
+            color: #bdc3c7;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-nav a:hover,
+        .admin-nav a.active {
+            background: #34495e;
+            color: white;
+        }
+        
+        .admin-nav i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+        
+        .stat-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid #3498db;
+        }
+        
+        .stat-card.users { border-left-color: #3498db; }
+        .stat-card.posts { border-left-color: #2ecc71; }
+        .stat-card.reports { border-left-color: #e74c3c; }
+        .stat-card.blocked { border-left-color: #f39c12; }
+        
+        .stat-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: #2c3e50;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 0.5rem;
+        }
+        
+        .stat-change {
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+        
+        .stat-change.positive {
+            color: #27ae60;
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .dashboard-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .dashboard-card h3 {
+            margin: 0 0 1rem 0;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 0.5rem;
+        }
+        
+        .recent-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .recent-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .recent-item:last-child {
+            border-bottom: none;
+        }
+        
+        .recent-info h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 0.9rem;
+            color: #2c3e50;
+        }
+        
+        .recent-info p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+        
+        .recent-time {
+            font-size: 0.8rem;
+            color: #95a5a6;
+        }
+        
+        .alert-list {
+            margin-top: 1rem;
+        }
+        
+        .alert-item {
+            background: #fff5f5;
+            border: 1px solid #fed7d7;
+            border-radius: 5px;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .alert-item h4 {
+            margin: 0 0 0.5rem 0;
+            color: #c53030;
+            font-size: 0.9rem;
+        }
+        
+        .alert-item p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #744210;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-sm {
+            padding: 0.25rem 0.5rem;
+            font-size: 0.8rem;
+        }
+        
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 1rem;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .page-title {
+            margin: 0;
+            color: #2c3e50;
+        }
+        
+        .admin-user-info {
+            background: #34495e;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #2c3e50;
+            margin-top: auto;
+        }
+        
+        .admin-user-info p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #bdc3c7;
+        }
+        
+        .admin-user-info strong {
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-header">
+                <h2><i class="fas fa-shield-alt"></i> Admin Panel</h2>
+            </div>
+            
+            <nav class="admin-nav">
+                <ul>
+                    <li><a href="/admin" class="active"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="/admin/users"><i class="fas fa-users"></i> Users</a></li>
+                    <li><a href="/admin/posts"><i class="fas fa-home"></i> Posts</a></li>
+                    <li><a href="/admin/reports"><i class="fas fa-flag"></i> Reports</a></li>
+                    <li><a href="/" target="_blank"><i class="fas fa-globe"></i> View Site</a></li>
+                    <li><a href="/auth/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                </ul>
+            </nav>
+            
+            <div class="admin-user-info">
+                <p><strong><%= admin.full_name %></strong></p>
+                <p>Administrator</p>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="admin-content">
+            <div class="page-header">
+                <h1 class="page-title">Dashboard</h1>
+                <div>
+                    <span class="recent-time">Last updated: <%= new Date().toLocaleString() %></span>
+                </div>
+            </div>
+            
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card users">
+                    <h3>Total Users</h3>
+                    <div class="stat-number"><%= stats.users.total_users %></div>
+                    <div class="stat-change positive">
+                        +<%= stats.users.new_users_30d %> this month
+                    </div>
+                </div>
+                
+                <div class="stat-card posts">
+                    <h3>Total Posts</h3>
+                    <div class="stat-number"><%= stats.posts.total_posts %></div>
+                    <div class="stat-change positive">
+                        +<%= stats.posts.new_posts_30d %> this month
+                    </div>
+                </div>
+                
+                <div class="stat-card reports">
+                    <h3>Total Reports</h3>
+                    <div class="stat-number"><%= stats.reports.total_reports %></div>
+                    <div class="stat-change">
+                        +<%= stats.reports.new_reports_7d %> this week
+                    </div>
+                </div>
+                
+                <div class="stat-card blocked">
+                    <h3>Blocked Users</h3>
+                    <div class="stat-number"><%= stats.users.blocked_users %></div>
+                    <div class="stat-change">
+                        <%= ((stats.users.blocked_users / stats.users.total_users) * 100).toFixed(1) %>% of total
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dashboard Grid -->
+            <div class="dashboard-grid">
+                <!-- Recent Activities -->
+                <div class="dashboard-card">
+                    <h3>Recent Activities</h3>
+                    
+                    <h4 style="margin-top: 1.5rem; color: #3498db;">New Users</h4>
+                    <ul class="recent-list">
+                        <% recent.users.forEach(user => { %>
+                            <li class="recent-item">
+                                <div class="recent-info">
+                                    <h4><%= user.full_name %></h4>
+                                    <p><%= user.role %> • <%= user.department_name || 'No Department' %></p>
+                                </div>
+                                <div class="recent-time">
+                                    <%= new Date(user.created_at).toLocaleDateString() %>
+                                </div>
+                            </li>
+                        <% }); %>
+                    </ul>
+                    
+                    <h4 style="margin-top: 1.5rem; color: #2ecc71;">Recent Posts</h4>
+                    <ul class="recent-list">
+                        <% recent.posts.forEach(post => { %>
+                            <li class="recent-item">
+                                <div class="recent-info">
+                                    <h4><%= post.type_display %> in <%= post.barangay %></h4>
+                                    <p>by <%= post.poster_name %></p>
+                                </div>
+                                <div class="recent-time">
+                                    <%= new Date(post.created_at).toLocaleDateString() %>
+                                </div>
+                            </li>
+                        <% }); %>
+                    </ul>
+                    
+                    <h4 style="margin-top: 1.5rem; color: #e74c3c;">Recent Reports</h4>
+                    <ul class="recent-list">
+                        <% recent.reports.forEach(report => { %>
+                            <li class="recent-item">
+                                <div class="recent-info">
+                                    <h4><%= report.type.toUpperCase() %> Report</h4>
+                                    <p><%= report.street %>, <%= report.barangay %> by <%= report.reporter_name %></p>
+                                </div>
+                                <div class="recent-time">
+                                    <%= new Date(report.created_at).toLocaleDateString() %>
+                                </div>
+                            </li>
+                        <% }); %>
+                    </ul>
+                </div>
+                
+                <!-- Alerts and Charts -->
+                <div>
+                    <!-- System Status -->
+                    <div class="dashboard-card">
+                        <h3>System Status</h3>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; text-align: center;">
+                            <div>
+                                <div style="font-size: 1.5rem; color: #2ecc71; font-weight: bold;">
+                                    <%= stats.posts.available_posts %>
+                                </div>
+                                <div style="font-size: 0.8rem; color: #7f8c8d;">Available</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 1.5rem; color: #f39c12; font-weight: bold;">
+                                    <%= stats.posts.occupied_posts %>
+                                </div>
+                                <div style="font-size: 0.8rem; color: #7f8c8d;">Occupied</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 1.5rem; color: #e74c3c; font-weight: bold;">
+                                    <%= stats.posts.flagged_posts %>
+                                </div>
+                                <div style="font-size: 0.8rem; color: #7f8c8d;">Flagged</div>
+                            </div>
+                            <div>
+                                <div style="font-size: 1.5rem; color: #95a5a6; font-weight: bold;">
+                                    <%= stats.posts.archived_posts %>
+                                </div>
+                                <div style="font-size: 0.8rem; color: #7f8c8d;">Archived</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- User Distribution Chart -->
+                    <div class="dashboard-card">
+                        <h3>User Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="userChart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <!-- Alerts -->
+                    <div class="dashboard-card">
+                        <h3>Attention Required</h3>
+                        <% if (flaggedPosts.length > 0) { %>
+                            <div class="alert-list">
+                                <% flaggedPosts.slice(0, 3).forEach(post => { %>
+                                    <div class="alert-item">
+                                        <h4><%= post.report_count %> reports for <%= post.type_display %></h4>
+                                        <p><%= post.street %>, <%= post.barangay %> by <%= post.poster_name %></p>
+                                        <p>Report types: <%= post.report_types %></p>
+                                        <div style="margin-top: 0.5rem;">
+                                            <a href="/admin/posts?search=<%= post.street %>" class="btn btn-primary btn-sm">View Post</a>
+                                            <button onclick="flagPost(<%= post.post_id %>)" class="btn btn-danger btn-sm">Flag Post</button>
+                                        </div>
+                                    </div>
+                                <% }); %>
+                            </div>
+                        <% } else { %>
+                            <p style="color: #27ae60; text-align: center; padding: 2rem;">
+                                <i class="fas fa-check-circle" style="font-size: 2rem; display: block; margin-bottom: 0.5rem;"></i>
+                                No posts require immediate attention
+                            </p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="dashboard-card">
+                <h3>Quick Actions</h3>
+                <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                    <a href="/admin/users" class="btn btn-primary">
+                        <i class="fas fa-users"></i> Manage Users
+                    </a>
+                    <a href="/admin/posts" class="btn btn-primary">
+                        <i class="fas fa-home"></i> Manage Posts
+                    </a>
+                    <a href="/admin/reports" class="btn btn-primary">
+                        <i class="fas fa-flag"></i> View Reports
+                    </a>
+                    <a href="/admin/posts?status=flagged" class="btn btn-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Flagged Posts
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // User Distribution Chart
+        const ctx = document.getElementById('userChart').getContext('2d');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Students', 'Staff', 'Blocked'],
+                datasets: [{
+                    data: [
+                        <%= stats.users.students %>,
+                        <%= stats.users.staff %>,
+                        <%= stats.users.blocked_users %>
+                    ],
+                    backgroundColor: [
+                        '#3498db',
+                        '#2ecc71',
+                        '#e74c3c'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    }
+                }
+            }
+        });
+        
+        // Flag post function
+        function flagPost(postId) {
+            if (confirm('Are you sure you want to flag this post?')) {
+                fetch(`/admin/posts/${postId}/toggle-flag`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to flag post');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to flag post');
+                });
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -54,8 +54,6 @@ router.get('/', async (req, res) => {
                    AVG(rat.stars) as average_rating,
                    COUNT(DISTINCT rat.rating_id) as rating_count,
                    rm.number_of_rooms, rm.bathroom_type, rm.room_type,
-                   rm.has_wifi, rm.has_cctv, rm.is_airconditioned,
-                   rm.has_parking, rm.has_own_electricity, rm.has_own_water,
                    p.latitude, p.longitude
             FROM posts p
             LEFT JOIN users u ON p.user_id = u.user_id
@@ -64,10 +62,31 @@ router.get('/', async (req, res) => {
             LEFT JOIN favorites f ON p.post_id = f.post_id
             LEFT JOIN ratings rat ON p.post_id = rat.post_id
             LEFT JOIN rooms rm ON p.post_id = rm.post_id
-            WHERE p.is_flagged = false
+            WHERE p.is_flagged = false AND p.status != 'archived'
             GROUP BY p.post_id
             ORDER BY p.created_at DESC
         `);
+
+        // Get amenities for each listing
+        const listingIds = listings.map(l => l.post_id);
+        let amenitiesMap = {};
+        
+        if (listingIds.length > 0) {
+            const [amenities] = await pool.query(`
+                SELECT post_id, amenity_name, amenity_type 
+                FROM post_amenities 
+                WHERE post_id IN (${listingIds.map(() => '?').join(',')})
+                ORDER BY amenity_type ASC, amenity_name ASC
+            `, listingIds);
+            
+            // Group amenities by post_id
+            amenities.forEach(amenity => {
+                if (!amenitiesMap[amenity.post_id]) {
+                    amenitiesMap[amenity.post_id] = [];
+                }
+                amenitiesMap[amenity.post_id].push(amenity);
+            });
+        }
 
         // Process photos for each listing
         const processedListings = listings.map(listing => {
@@ -86,7 +105,8 @@ router.get('/', async (req, res) => {
                 rating_count: parseInt(listing.rating_count) || 0,
                 type: listing.type_display || 'Unknown Type',
                 latitude: listing.latitude ? parseFloat(listing.latitude) : null,
-                longitude: listing.longitude ? parseFloat(listing.longitude) : null
+                longitude: listing.longitude ? parseFloat(listing.longitude) : null,
+                allAmenities: amenitiesMap[listing.post_id] || []
             };
         });
 
@@ -159,6 +179,8 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
 
         console.log('Received form data:', req.body);
         console.log('Received files:', req.files);
+        console.log('Custom amenities[] received:', req.body['custom_amenities[]']);
+        console.log('Custom amenities received:', req.body['custom_amenities']);
 
         // Validate required fields
         const errors = [];
@@ -211,44 +233,73 @@ router.post('/create', isAuthenticated, upload.array('photos', 6), async (req, r
                 `INSERT INTO posts (
                     user_id, type_id, street, barangay, city, 
                     building_name, unit_number, landlord_name, contact_number,
-                    social_link, description, price, latitude, longitude,
-                    maps_link
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    social_link, description, search_keywords, price, latitude, longitude,
+                    maps_link, status
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     req.session.user.id, type_id, street, barangay, city,
                     building_name || null, unit_number || null, landlord_name, contact_number,
-                    social_media_link || null, description || null, price || null,
+                    social_media_link || null, description || null, 
+                    // Generate search keywords from description and location
+                    `${description || ''} ${street} ${barangay} ${city} ${building_name || ''}`.trim(),
+                    price || null,
                     latitude, longitude,
-                    req.body.maps_link || null
+                    req.body.maps_link || null,
+                    'available' // Set default status
                 ]
             );
 
             const postId = result.insertId;
 
-            // Insert room details
+            // Insert room details (without amenities)
             await connection.query(
                 `INSERT INTO rooms (
-                    post_id, number_of_rooms, bathroom_type, room_type,
-                    has_wifi, has_cctv, is_airconditioned, has_parking,
-                    has_own_electricity, has_own_water
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                    post_id, number_of_rooms, bathroom_type, room_type
+                ) VALUES (?, ?, ?, ?)`,
                 [
-                    postId, number_of_rooms, bathroom_type, room_type,
-                    has_wifi ? 1 : 0, has_cctv ? 1 : 0, is_airconditioned ? 1 : 0,
-                    has_parking ? 1 : 0, has_own_electricity ? 1 : 0, has_own_water ? 1 : 0
+                    postId, number_of_rooms, bathroom_type, room_type
                 ]
             );
 
-            // Insert custom amenities
-            if (req.body['custom_amenities[]']) {
-                let customAmenities = req.body['custom_amenities[]'];
-                if (!Array.isArray(customAmenities)) customAmenities = [customAmenities];
-                for (const amenity of customAmenities) {
+            // Insert default amenities (if selected)
+            const defaultAmenities = [
+                { field: 'has_wifi', name: 'WiFi' },
+                { field: 'has_cctv', name: 'CCTV' },
+                { field: 'is_airconditioned', name: 'Air Conditioning' },
+                { field: 'has_parking', name: 'Parking' },
+                { field: 'has_own_electricity', name: 'Own Electricity Meter' },
+                { field: 'has_own_water', name: 'Own Water Meter' }
+            ];
+
+            for (const amenity of defaultAmenities) {
+                if (req.body[amenity.field]) {
                     await connection.query(
-                        'INSERT INTO post_amenities (post_id, amenity_name) VALUES (?, ?)',
-                        [postId, amenity]
-                    );
+                        'INSERT INTO post_amenities (post_id, amenity_name, amenity_type) VALUES (?, ?, ?)',
+                        [postId, amenity.name, 'default']
+            );
                 }
+            }
+
+            // Insert custom amenities
+            console.log('Processing custom amenities...');
+            // Check both possible field names (with and without [])
+            let customAmenities = req.body['custom_amenities[]'] || req.body['custom_amenities'];
+            if (customAmenities) {
+                console.log('Raw custom amenities:', customAmenities);
+                if (!Array.isArray(customAmenities)) customAmenities = [customAmenities];
+                console.log('Processed custom amenities array:', customAmenities);
+                for (const amenity of customAmenities) {
+                    if (amenity && amenity.trim()) { // Only insert non-empty amenities
+                        console.log('Inserting custom amenity:', amenity);
+                    await connection.query(
+                            'INSERT INTO post_amenities (post_id, amenity_name, amenity_type) VALUES (?, ?, ?)',
+                            [postId, amenity.trim(), 'custom']
+                    );
+                    }
+                }
+                console.log('Custom amenities inserted successfully');
+            } else {
+                console.log('No custom amenities found in request body');
             }
 
             // Insert photos
@@ -294,8 +345,6 @@ router.get('/:id', async (req, res) => {
             SELECT p.*, u.full_name as poster_name,
                    rt.type_name, rt.display_name as type_display,
                    rm.number_of_rooms, rm.bathroom_type, rm.room_type,
-                   rm.has_wifi, rm.has_cctv, rm.is_airconditioned,
-                   rm.has_parking, rm.has_own_electricity, rm.has_own_water,
                    (SELECT COUNT(*) FROM favorites WHERE post_id = p.post_id) as favorite_count,
                    (SELECT AVG(stars) FROM ratings WHERE post_id = p.post_id) as average_rating,
                    (SELECT COUNT(*) FROM ratings WHERE post_id = p.post_id) as rating_count
@@ -303,7 +352,7 @@ router.get('/:id', async (req, res) => {
             JOIN users u ON p.user_id = u.user_id
             LEFT JOIN room_types rt ON p.type_id = rt.type_id
             LEFT JOIN rooms rm ON p.post_id = rm.post_id
-            WHERE p.post_id = ? AND p.is_flagged = false
+            WHERE p.post_id = ? AND p.is_flagged = false AND p.status != 'archived'
         `, [req.params.id]);
 
         if (listings.length === 0) {
@@ -318,13 +367,6 @@ router.get('/:id', async (req, res) => {
         // Convert average_rating to number and handle null case
         listing.average_rating = listing.average_rating ? parseFloat(listing.average_rating) : null;
         listing.rating_count = parseInt(listing.rating_count) || 0;
-        // Ensure amenity fields are boolean
-        listing.has_wifi = !!listing.has_wifi;
-        listing.has_cctv = !!listing.has_cctv;
-        listing.is_airconditioned = !!listing.is_airconditioned;
-        listing.has_parking = !!listing.has_parking;
-        listing.has_own_electricity = !!listing.has_own_electricity;
-        listing.has_own_water = !!listing.has_own_water;
 
         // Get photos and format their paths
         const [photos] = await pool.query(
@@ -338,6 +380,12 @@ router.get('/:id', async (req, res) => {
             file_path: `/uploads/listings/${photo.file_path}`
         }));
 
+        // Get all amenities for this listing (both default and custom)
+        const [allAmenities] = await pool.query(
+            'SELECT * FROM post_amenities WHERE post_id = ? ORDER BY amenity_type ASC, amenity_name ASC',
+            [req.params.id]
+        );
+
         // Check if user has favorited this listing
         let isFavorited = false;
         if (req.session.user) {
@@ -348,9 +396,11 @@ router.get('/:id', async (req, res) => {
             isFavorited = favorites.length > 0;
         }
 
-        // Get success message from session and clear it
+        // Get success and error messages from session and clear them
         const success = req.session.success;
+        const error = req.session.error;
         delete req.session.success;
+        delete req.session.error;
 
         res.render('listings/details', {
             title: `${listing.type_display} - Dwelly`,
@@ -358,7 +408,9 @@ router.get('/:id', async (req, res) => {
             listing,
             photos: formattedPhotos,
             isFavorited,
-            success
+            allAmenities,
+            success,
+            messages: { error }
         });
     } catch (error) {
         console.error('Error fetching listing:', error);
@@ -508,10 +560,12 @@ router.get('/:id/edit', isAuthenticated, async (req, res) => {
 
         const [listings] = await pool.query(`
             SELECT p.*, GROUP_CONCAT(ph.file_path) as photos,
-                   rt.type_name, rt.display_name as type_display
+                   rt.type_name, rt.display_name as type_display,
+                   rm.number_of_rooms, rm.bathroom_type, rm.room_type
             FROM posts p
             LEFT JOIN photos ph ON p.post_id = ph.post_id
             LEFT JOIN room_types rt ON p.type_id = rt.type_id
+            LEFT JOIN rooms rm ON p.post_id = rm.post_id
             WHERE p.post_id = ? AND p.user_id = ?
             GROUP BY p.post_id
         `, [req.params.id, req.session.user.id]);
@@ -526,9 +580,30 @@ router.get('/:id/edit', isAuthenticated, async (req, res) => {
         const listing = listings[0];
         listing.photos = listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : [];
         
-        // Ensure maps_link is included in formData
+        // Get amenities for this listing
+        const [amenities] = await pool.query(
+            'SELECT * FROM post_amenities WHERE post_id = ? ORDER BY amenity_type ASC, amenity_name ASC',
+            [req.params.id]
+        );
+        
+        // Separate default and custom amenities
+        const defaultAmenities = amenities.filter(a => a.amenity_type === 'default');
+        const customAmenities = amenities.filter(a => a.amenity_type === 'custom');
+        
+        // Set default amenity checkboxes
+        const amenityFlags = {
+            has_wifi: defaultAmenities.some(a => a.amenity_name === 'WiFi'),
+            has_cctv: defaultAmenities.some(a => a.amenity_name === 'CCTV'),
+            is_airconditioned: defaultAmenities.some(a => a.amenity_name === 'Air Conditioning'),
+            has_parking: defaultAmenities.some(a => a.amenity_name === 'Parking'),
+            has_own_electricity: defaultAmenities.some(a => a.amenity_name === 'Own Electricity Meter'),
+            has_own_water: defaultAmenities.some(a => a.amenity_name === 'Own Water Meter')
+        };
+        
+        // Prepare form data
         const formData = {
             ...listing,
+            ...amenityFlags,
             google_maps_link: listing.maps_link || ''
         };
 
@@ -538,7 +613,8 @@ router.get('/:id/edit', isAuthenticated, async (req, res) => {
             listing,
             errors: [],
             formData,
-            roomTypes
+            roomTypes,
+            customAmenities: customAmenities.map(a => a.amenity_name)
         });
     } catch (error) {
         console.error('Error fetching listing for edit:', error);
@@ -550,12 +626,20 @@ router.get('/:id/edit', isAuthenticated, async (req, res) => {
 });
 
 // Update a listing
-router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req, res) => {
+router.post('/:id/edit', isAuthenticated, upload.array('new_photos', 6), async (req, res) => {
     try {
+        console.log('=== EDIT LISTING DEBUG ===');
+        console.log('Request body:', req.body);
+        console.log('Files:', req.files);
+        console.log('Keep photos field:', req.body['keep_photos[]']);
+        console.log('========================');
+        
         const { 
             type_id, 
             street, 
             barangay, 
+            building_name,
+            unit_number,
             landlord_name, 
             contact_number, 
             social_media_link, 
@@ -563,7 +647,17 @@ router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req,
             description,
             price,
             latitude,
-            longitude
+            longitude,
+            // New fields
+            number_of_rooms,
+            bathroom_type,
+            room_type,
+            has_wifi,
+            has_cctv,
+            is_airconditioned,
+            has_parking,
+            has_own_electricity,
+            has_own_water
         } = req.body;
 
         // Set default city
@@ -576,6 +670,9 @@ router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req,
         if (!barangay) errors.push('Barangay is required');
         if (!landlord_name) errors.push('Landlord name is required');
         if (!contact_number) errors.push('Contact number is required');
+        if (!number_of_rooms) errors.push('Number of rooms is required');
+        if (!bathroom_type) errors.push('Bathroom type is required');
+        if (!room_type) errors.push('Room type is required');
 
         // Validate Google Maps link if provided
         let cleaned_maps_link = maps_link ? maps_link.trim() : '';
@@ -594,13 +691,31 @@ router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req,
 
         if (errors.length > 0) {
             const [roomTypes] = await pool.query('SELECT * FROM room_types ORDER BY display_name');
+            
+            // Get the listing data for re-rendering
+            const [listings] = await pool.query(`
+                SELECT p.*, GROUP_CONCAT(ph.file_path) as photos,
+                       rt.type_name, rt.display_name as type_display,
+                       rm.number_of_rooms, rm.bathroom_type, rm.room_type
+                FROM posts p
+                LEFT JOIN photos ph ON p.post_id = ph.post_id
+                LEFT JOIN room_types rt ON p.type_id = rt.type_id
+                LEFT JOIN rooms rm ON p.post_id = rm.post_id
+                WHERE p.post_id = ? AND p.user_id = ?
+                GROUP BY p.post_id
+            `, [req.params.id, req.session.user.id]);
+            
+            const listing = listings[0];
+            listing.photos = listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : [];
+            
             return res.render('listings/edit', {
                 title: 'Edit Listing - Dwelly',
                 user: req.session.user,
-                listing: req.body,
+                listing,
                 errors,
                 formData: req.body,
-                roomTypes
+                roomTypes,
+                customAmenities: []
             });
         }
 
@@ -616,39 +731,170 @@ router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req,
                     street = ?, 
                     barangay = ?, 
                     city = ?, 
+                    building_name = ?,
+                    unit_number = ?,
                     landlord_name = ?, 
                     contact_number = ?, 
                     social_link = ?, 
                     maps_link = ?, 
                     description = ?, 
+                    search_keywords = ?,
                     price = ?,
                     latitude = ?,
                     longitude = ?
                 WHERE post_id = ? AND user_id = ?`,
                 [
                     type_id, street, barangay, city,
+                    building_name || null, unit_number || null,
                     landlord_name, contact_number, 
                     social_media_link || null,
                     cleaned_maps_link || null, 
-                    description || null, price || null,
+                    description || null,
+                    // Update search keywords
+                    `${description || ''} ${street} ${barangay} ${city} ${building_name || ''}`.trim(),
+                    price || null,
                     latitude,
                     longitude,
                     req.params.id, req.session.user.id
                 ]
             );
 
-            // Handle new photos if uploaded
+            // Update room details
+            await connection.query(
+                `UPDATE rooms SET 
+                    number_of_rooms = ?, 
+                    bathroom_type = ?, 
+                    room_type = ?
+                WHERE post_id = ?`,
+                [
+                    number_of_rooms, bathroom_type, room_type,
+                    req.params.id
+                ]
+            );
+
+            // Update amenities - delete existing and insert new ones
+            await connection.query('DELETE FROM post_amenities WHERE post_id = ?', [req.params.id]);
+
+            // Insert default amenities (if selected)
+            const defaultAmenities = [
+                { field: 'has_wifi', name: 'WiFi' },
+                { field: 'has_cctv', name: 'CCTV' },
+                { field: 'is_airconditioned', name: 'Air Conditioning' },
+                { field: 'has_parking', name: 'Parking' },
+                { field: 'has_own_electricity', name: 'Own Electricity Meter' },
+                { field: 'has_own_water', name: 'Own Water Meter' }
+            ];
+
+            for (const amenity of defaultAmenities) {
+                if (req.body[amenity.field]) {
+                    await connection.query(
+                        'INSERT INTO post_amenities (post_id, amenity_name, amenity_type) VALUES (?, ?, ?)',
+                        [req.params.id, amenity.name, 'default']
+                    );
+                }
+            }
+
+            // Insert custom amenities
+            let customAmenities = req.body['custom_amenities[]'] || req.body['custom_amenities'];
+            if (customAmenities) {
+                if (!Array.isArray(customAmenities)) customAmenities = [customAmenities];
+                for (const amenity of customAmenities) {
+                    if (amenity && amenity.trim()) {
+                        await connection.query(
+                            'INSERT INTO post_amenities (post_id, amenity_name, amenity_type) VALUES (?, ?, ?)',
+                            [req.params.id, amenity.trim(), 'custom']
+                        );
+                    }
+                }
+            }
+
+            // Handle photo management
+            console.log('Processing photos...');
+            console.log('Keep photos (with []):', req.body['keep_photos[]']);
+            console.log('Keep photos (without []):', req.body['keep_photos']);
+            console.log('New files:', req.files ? req.files.length : 0);
+
+            // Get current photos from database
+            const [currentPhotos] = await connection.query('SELECT * FROM photos WHERE post_id = ?', [req.params.id]);
+            console.log('Current photos in DB:', currentPhotos.map(p => p.file_path));
+
+            // Determine which photos to keep - handle both field names
+            let photosToKeep = req.body['keep_photos[]'] || req.body['keep_photos'] || [];
+            if (!Array.isArray(photosToKeep)) {
+                photosToKeep = photosToKeep ? [photosToKeep] : [];
+            }
+            console.log('Photos to keep:', photosToKeep);
+
+            // If no new photos are being uploaded and no keep_photos[] is specified,
+            // assume user wants to keep all existing photos (no changes to photos)
+            if ((!req.files || req.files.length === 0) && photosToKeep.length === 0 && currentPhotos.length > 0) {
+                console.log('No photo changes detected - keeping all existing photos');
+                photosToKeep = currentPhotos.map(p => p.file_path);
+            }
+
+            // Delete photos that are not in the keep list
+            for (const photo of currentPhotos) {
+                if (!photosToKeep.includes(photo.file_path)) {
+                    console.log('Deleting photo:', photo.file_path);
+                    await connection.query('DELETE FROM photos WHERE photo_id = ?', [photo.photo_id]);
+                    
+                    // Also delete the physical file
+                    const fs = require('fs');
+                    const filePath = `public/uploads/listings/${photo.file_path}`;
+                    if (fs.existsSync(filePath)) {
+                        fs.unlinkSync(filePath);
+                        console.log('Deleted physical file:', filePath);
+                    }
+                }
+            }
+
+            // Add new photos if uploaded
             if (req.files && req.files.length > 0) {
-                // Delete old photos
-                await connection.query('DELETE FROM photos WHERE post_id = ?', [req.params.id]);
-                
-                // Insert new photos
+                console.log('Adding new photos...');
                 for (const file of req.files) {
                     await connection.query(
                         'INSERT INTO photos (post_id, file_path) VALUES (?, ?)',
                         [req.params.id, file.filename]
                     );
+                    console.log('Added new photo:', file.filename);
                 }
+            }
+
+            // Validate total photo count
+            const [finalPhotos] = await connection.query('SELECT COUNT(*) as count FROM photos WHERE post_id = ?', [req.params.id]);
+            const totalPhotos = finalPhotos[0].count;
+            console.log('Final photo count:', totalPhotos);
+
+            if (totalPhotos === 0) {
+                await connection.rollback();
+                connection.release();
+                const [roomTypes] = await pool.query('SELECT * FROM room_types ORDER BY display_name');
+                
+                // Get the listing data for re-rendering
+                const [listings] = await pool.query(`
+                    SELECT p.*, GROUP_CONCAT(ph.file_path) as photos,
+                           rt.type_name, rt.display_name as type_display,
+                           rm.number_of_rooms, rm.bathroom_type, rm.room_type
+                    FROM posts p
+                    LEFT JOIN photos ph ON p.post_id = ph.post_id
+                    LEFT JOIN room_types rt ON p.type_id = rt.type_id
+                    LEFT JOIN rooms rm ON p.post_id = rm.post_id
+                    WHERE p.post_id = ? AND p.user_id = ?
+                    GROUP BY p.post_id
+                `, [req.params.id, req.session.user.id]);
+                
+                const listing = listings[0];
+                listing.photos = listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : [];
+                
+                return res.render('listings/edit', {
+                    title: 'Edit Listing - Dwelly',
+                    user: req.session.user,
+                    listing,
+                    errors: ['At least one photo is required'],
+                    formData: req.body,
+                    roomTypes,
+                    customAmenities: []
+                });
             }
 
             // Commit transaction
@@ -670,19 +916,37 @@ router.post('/:id/edit', isAuthenticated, upload.array('photos', 6), async (req,
     } catch (error) {
         console.error('Error updating listing:', error);
         const [roomTypes] = await pool.query('SELECT * FROM room_types ORDER BY display_name');
+        
+        // Get the listing data for re-rendering
+        const [listings] = await pool.query(`
+            SELECT p.*, GROUP_CONCAT(ph.file_path) as photos,
+                   rt.type_name, rt.display_name as type_display,
+                   rm.number_of_rooms, rm.bathroom_type, rm.room_type
+            FROM posts p
+            LEFT JOIN photos ph ON p.post_id = ph.post_id
+            LEFT JOIN room_types rt ON p.type_id = rt.type_id
+            LEFT JOIN rooms rm ON p.post_id = rm.post_id
+            WHERE p.post_id = ? AND p.user_id = ?
+            GROUP BY p.post_id
+        `, [req.params.id, req.session.user.id]);
+        
+        const listing = listings[0];
+        listing.photos = listing.photos ? listing.photos.split(',').map(photo => `/uploads/listings/${photo}`) : [];
+        
         return res.render('listings/edit', {
             title: 'Edit Listing - Dwelly',
             user: req.session.user,
-            listing: req.body,
+            listing,
             errors: [`An error occurred while updating the listing: ${error.message}`],
             formData: req.body,
-            roomTypes
+            roomTypes,
+            customAmenities: []
         });
     }
 });
 
 // Delete a listing
-router.delete('/:id', isAuthenticated, async (req, res) => {
+router.post('/:id/delete', isAuthenticated, async (req, res) => {
     try {
         // Check if user owns the listing
         const [posts] = await pool.query(
@@ -691,16 +955,31 @@ router.delete('/:id', isAuthenticated, async (req, res) => {
         );
 
         if (posts.length === 0) {
-            return res.status(403).json({ error: 'You do not have permission to delete this listing' });
+            req.session.error = 'You do not have permission to delete this listing';
+            return res.redirect(`/listings/${req.params.id}`);
         }
 
-        // Delete the listing (photos will be deleted automatically due to ON DELETE CASCADE)
-        await pool.query('DELETE FROM posts WHERE post_id = ?', [req.params.id]);
+        // Archive and delete the listing using the archive system
+        const { archiveAndDeletePost } = require('../utils/archiveUtils');
+        const result = await archiveAndDeletePost(
+            req.params.id, 
+            req.session.user.id, 
+            'user_deleted'
+        );
 
-        res.json({ success: true });
+        if (result.success) {
+            req.session.success = 'Listing archived and deleted successfully';
+            console.log(`✅ Post ${req.params.id} archived and deleted by user ${req.session.user.id}`);
+        } else {
+            req.session.error = 'Failed to delete listing: ' + result.message;
+            console.error(`❌ Failed to archive/delete post ${req.params.id}:`, result.error);
+        }
+
+        res.redirect('/');
     } catch (error) {
         console.error('Error deleting listing:', error);
-        res.status(500).json({ error: 'Failed to delete listing' });
+        req.session.error = 'Failed to delete listing';
+        res.redirect(`/listings/${req.params.id}`);
     }
 });
 

@@ -71,9 +71,13 @@ router.post('/register', async (req, res) => {
 
 // Login page
 router.get('/login', (req, res) => {
-    // If user is already logged in, redirect to home
+    // If user is already logged in, redirect appropriately
     if (req.session.user) {
+        if (req.session.user.role === 'admin') {
+            return res.redirect('/admin');
+        } else {
         return res.redirect('/');
+        }
     }
     res.render('auth/login', { 
         title: 'Login - Dwelly',
@@ -120,7 +124,12 @@ router.post('/login', async (req, res) => {
             email: user.email
         };
 
+        // Redirect admin users to admin dashboard, regular users to home
+        if (user.role === 'admin') {
+            res.redirect('/admin');
+        } else {
         res.redirect('/');
+        }
     } catch (error) {
         console.error('Login error:', error);
         req.flash('error', 'Login failed. Please try again.');

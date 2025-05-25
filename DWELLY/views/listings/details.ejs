@@ -424,6 +424,12 @@
                 </div>
             <% } %>
 
+            <% if (typeof messages !== 'undefined' && messages.error) { %>
+                <div class="error-message" style="background-color: #f8d7da; color: #721c24; padding: 1rem; margin-bottom: 1rem; border-radius: 5px; border: 1px solid #f5c6cb;">
+                    <%= messages.error %>
+                </div>
+            <% } %>
+
             <div class="listing-header">
                 <h1 class="listing-title"><%= listing.type %></h1>
                 <div class="listing-meta">
@@ -463,8 +469,8 @@
                                 <a href="/listings/<%= listing.post_id %>/edit" class="btn btn-primary" style="padding: 0.75rem 1.5rem; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; transition: background-color 0.3s ease; text-decoration: none; display: inline-block; text-align: center; background: #3498db; color: white;">
                                     <i class="fas fa-edit"></i> Edit
                                 </a>
-                                <form action="/listings/<%= listing.post_id %>/delete" method="POST" style="display: inline;">
-                                    <button type="submit" class="btn btn-danger" style="padding: 0.75rem 1.5rem; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; transition: background-color 0.3s ease; text-decoration: none; display: inline-block; text-align: center; background: #e74c3c; color: white;" onclick="return confirm('Are you sure you want to delete this listing?');">
+                                <form action="/listings/<%= listing.post_id %>/delete" method="POST" style="display: inline;" onsubmit="return confirmDelete();">
+                                    <button type="submit" class="btn btn-danger" style="padding: 0.75rem 1.5rem; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; transition: background-color 0.3s ease; text-decoration: none; display: inline-block; text-align: center; background: #e74c3c; color: white;">
                                         <i class="fas fa-trash"></i> Delete
                                     </button>
                                 </form>
@@ -528,24 +534,26 @@
                             <h3>Amenities</h3>
                             <div class="listing-amenities" style="flex-wrap: wrap; white-space: normal;">
                                 <% let hasAmenity = false; %>
-                                <% if (listing.has_wifi) { hasAmenity = true; %>
-                                    <span style="display: inline-block; background: #e1f0ff; color: #3498db; border-radius: 15px; font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.25rem;"><i style="font-size: 0.875rem;" class="fas fa-wifi"></i> WiFi</span>
-                                <% } %>
-                                <% if (listing.has_cctv) { hasAmenity = true; %>
-                                    <span style="display: inline-block; background: #e1f0ff; color: #3498db; border-radius: 15px; font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.25rem;"><i style="font-size: 0.875rem;" class="fas fa-video"></i> CCTV</span>
-                                <% } %>
-                                <% if (listing.is_airconditioned) { hasAmenity = true; %>
-                                    <span style="display: inline-block; background: #e1f0ff; color: #3498db; border-radius: 15px; font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.25rem;"><i style="font-size: 0.875rem;" class="fas fa-snowflake"></i> AC</span>
-                                <% } %>
-                                <% if (listing.has_parking) { hasAmenity = true; %>
-                                    <span style="display: inline-block; background: #e1f0ff; color: #3498db; border-radius: 15px; font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.25rem;"><i style="font-size: 0.875rem;" class="fas fa-parking"></i> Parking</span>
-                                <% } %>
-                                <% if (listing.has_own_electricity) { hasAmenity = true; %>
-                                    <span style="display: inline-block; background: #e1f0ff; color: #3498db; border-radius: 15px; font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.25rem;"><i style="font-size: 0.875rem;" class="fas fa-bolt"></i> Own Meter</span>
-                                <% } %>
-                                <% if (listing.has_own_water) { hasAmenity = true; %>
-                                    <span style="display: inline-block; background: #e1f0ff; color: #3498db; border-radius: 15px; font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.25rem;"><i style="font-size: 0.875rem;" class="fas fa-tint"></i> Own Water</span>
-                                <% } %>
+                                
+                                <% if (typeof allAmenities !== 'undefined' && allAmenities.length > 0) { 
+                                    hasAmenity = true;
+                                    allAmenities.forEach(amenity => { 
+                                        // Choose icon based on amenity name
+                                        let icon = 'fas fa-check';
+                                        const amenityName = amenity.amenity_name.toLowerCase();
+                                        if (amenityName.includes('wifi')) icon = 'fas fa-wifi';
+                                        else if (amenityName.includes('cctv')) icon = 'fas fa-video';
+                                        else if (amenityName.includes('air') || amenityName.includes('ac')) icon = 'fas fa-snowflake';
+                                        else if (amenityName.includes('parking')) icon = 'fas fa-parking';
+                                        else if (amenityName.includes('electricity')) icon = 'fas fa-bolt';
+                                        else if (amenityName.includes('water')) icon = 'fas fa-tint';
+                                %>
+                                    <span style="display: inline-block; background: #e1f0ff; color: #3498db; border-radius: 15px; font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.25rem; margin-bottom: 0.25rem;">
+                                        <i style="font-size: 0.875rem;" class="<%= icon %>"></i> <%= amenity.amenity_name %>
+                                    </span>
+                                <% });
+                                } %>
+
                                 <% if (!hasAmenity) { %>
                                     <span style="color: #7f8c8d;">No amenities listed.</span>
                                 <% } %>
@@ -993,6 +1001,20 @@
             });
         }
     });
+
+    // Strong confirmation for post deletion
+    function confirmDelete() {
+        const confirmMessage = `⚠️ WARNING: This will permanently delete your listing!\n\nThis action will:\n• Archive your listing data for record keeping\n• Remove the listing from public view\n• Delete all photos and related data\n• Remove all favorites and ratings for this listing\n\nThis action CANNOT be undone!\n\nTo confirm deletion, please type "DELETE" (without quotes) in the box below:`;
+        
+        const confirmation = prompt(confirmMessage);
+        
+        if (confirmation && confirmation.toUpperCase() === 'DELETE') {
+            return true; // Allow form submission
+        } else {
+            alert('Deletion cancelled. You must type "DELETE" (case-insensitive) to confirm.');
+            return false; // Prevent form submission
+        }
+    }
     </script>
 </body>
 </html> 

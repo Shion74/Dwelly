@@ -215,25 +215,27 @@
                         <h3>Photos</h3>
                         <div class="form-group">
                             <label class="form-label">Current Photos</label>
-                            <div class="photo-preview">
+                            <div class="photo-preview" id="currentPhotos">
                                 <% if (listing.photos && listing.photos.length > 0) { %>
-                                    <% listing.photos.forEach(function(photo) { %>
-                                        <div class="photo-item">
+                                    <% listing.photos.forEach(function(photo, index) { %>
+                                        <div class="photo-item" data-photo-index="<%= index %>">
                                             <img src="<%= photo %>" alt="Current photo">
+                                            <button type="button" class="photo-remove" onclick="removeCurrentPhoto(<%= index %>)">×</button>
+                                            <input type="hidden" name="keep_photos[]" value="<%= photo.split('/').pop() %>">
                                         </div>
                                     <% }); %>
                                 <% } %>
                             </div>
-                            <div class="form-text">Upload new photos to replace the current ones. Leave empty to keep current photos.</div>
+                            <div class="form-text">Click the × button to remove photos you don't want to keep.</div>
                         </div>
                         <div class="form-group">
-                            <label class="form-label">Upload New Photos (Optional)</label>
+                            <label class="form-label">Add New Photos (Optional)</label>
                             <div class="photo-upload" id="photoUpload">
-                                <p>Click to select photos or drag and drop</p>
-                                <input type="file" name="photos" id="photos" multiple accept="image/*" style="display: none;">
+                                <p>Click to select additional photos or drag and drop</p>
+                                <input type="file" name="new_photos" id="photos" multiple accept="image/*" style="display: none;">
                             </div>
                             <div class="photo-preview" id="photoPreview"></div>
-                            <div class="form-text">Upload between 2 and 6 photos of your property. Supported formats: JPG, PNG, WebP. Max size: 5MB per image.</div>
+                            <div class="form-text">Add more photos to your listing. Total photos (existing + new) cannot exceed 6. Supported formats: JPG, PNG, WebP. Max size: 5MB per image.</div>
                         </div>
                     </div>
 
@@ -293,6 +295,68 @@
                         </div>
 
                         <div class="form-group">
+                            <label class="form-label required" for="number_of_rooms">Number of Rooms</label>
+                            <input type="number" class="form-control" id="number_of_rooms" name="number_of_rooms" min="1" required value="<%= formData.number_of_rooms || '' %>">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required" for="bathroom_type">Bathroom Type</label>
+                            <select class="form-control" id="bathroom_type" name="bathroom_type" required>
+                                <option value="">Select bathroom type</option>
+                                <option value="common" <%= formData.bathroom_type === 'common' ? 'selected' : '' %>>Common Bathroom</option>
+                                <option value="own" <%= formData.bathroom_type === 'own' ? 'selected' : '' %>>Own Bathroom</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label required" for="room_type">Room Type</label>
+                            <select class="form-control" id="room_type" name="room_type" required>
+                                <option value="">Select room type</option>
+                                <option value="bare" <%= formData.room_type === 'bare' ? 'selected' : '' %>>Bare Room</option>
+                                <option value="semi_furnished" <%= formData.room_type === 'semi_furnished' ? 'selected' : '' %>>Semi-Furnished</option>
+                                <option value="furnished" <%= formData.room_type === 'furnished' ? 'selected' : '' %>>Furnished</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Amenities</label>
+                            <div class="amenities-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
+                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="has_wifi" name="has_wifi" style="width: 18px; height: 18px;" <%= formData.has_wifi ? 'checked' : '' %>>
+                                    <label for="has_wifi" style="margin: 0; font-weight: normal;">WiFi</label>
+                                </div>
+                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="has_cctv" name="has_cctv" style="width: 18px; height: 18px;" <%= formData.has_cctv ? 'checked' : '' %>>
+                                    <label for="has_cctv" style="margin: 0; font-weight: normal;">CCTV</label>
+                                </div>
+                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="is_airconditioned" name="is_airconditioned" style="width: 18px; height: 18px;" <%= formData.is_airconditioned ? 'checked' : '' %>>
+                                    <label for="is_airconditioned" style="margin: 0; font-weight: normal;">Airconditioned</label>
+                                </div>
+                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="has_parking" name="has_parking" style="width: 18px; height: 18px;" <%= formData.has_parking ? 'checked' : '' %>>
+                                    <label for="has_parking" style="margin: 0; font-weight: normal;">Parking</label>
+                                </div>
+                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="has_own_electricity" name="has_own_electricity" style="width: 18px; height: 18px;" <%= formData.has_own_electricity ? 'checked' : '' %>>
+                                    <label for="has_own_electricity" style="margin: 0; font-weight: normal;">Own Electricity Meter</label>
+                                </div>
+                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
+                                    <input type="checkbox" id="has_own_water" name="has_own_water" style="width: 18px; height: 18px;" <%= formData.has_own_water ? 'checked' : '' %>>
+                                    <label for="has_own_water" style="margin: 0; font-weight: normal;">Own Water Meter</label>
+                                </div>
+                            </div>
+                            <div class="form-group" style="margin-top:1rem;">
+                                <label class="form-label">Other Amenities</label>
+                                <div style="display:flex; gap:0.5rem;">
+                                    <input type="text" id="customAmenityInput" class="form-control" placeholder="Add custom amenity..." style="flex: 1;">
+                                    <button type="button" id="addCustomAmenity" onclick="console.log('Inline onclick fired'); window.addCustomAmenityFallback && window.addCustomAmenityFallback();" style="padding: 0.75rem 1rem; background: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer; white-space: nowrap; transition: background 0.3s ease;" onmouseover="this.style.background='#7f8c8d'" onmouseout="this.style.background='#95a5a6'">Add</button>
+                                </div>
+                                <div id="customAmenitiesList" style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
                             <label class="form-label" for="description">Description</label>
                             <textarea class="form-control" id="description" name="description" rows="4"><%= listing.description %></textarea>
                             <div class="form-text">Describe the property, its features, and any important details potential tenants should know.</div>
@@ -327,12 +391,6 @@
                             <input type="url" class="form-control" id="social_media_link" name="social_media_link" placeholder="https://facebook.com/..." value="<%= formData.social_link || '' %>">
                             <div class="form-text">Add a link to your Facebook, Instagram, or other social media profile.</div>
                         </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="google_maps_link">Google Maps Link (Optional)</label>
-                            <input type="url" class="form-control" id="google_maps_link" name="google_maps_link" placeholder="https://maps.google.com/..." value="<%= formData.google_maps_link || '' %>">
-                            <div class="form-text">Add a link to the property's location on Google Maps.</div>
-                        </div>
                     </div>
 
                     <div class="form-actions">
@@ -353,6 +411,98 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
     <script>
+        // Global variables and functions for custom amenities
+        let customAmenities = <%-JSON.stringify(customAmenities || [])%>;
+        let customAmenityInput, customAmenitiesList;
+
+        function addCustomAmenityGlobal() {
+            console.log('Global add custom amenity called');
+            if (!customAmenityInput) {
+                customAmenityInput = document.getElementById('customAmenityInput');
+            }
+            if (!customAmenitiesList) {
+                customAmenitiesList = document.getElementById('customAmenitiesList');
+            }
+            
+            if (customAmenityInput && customAmenitiesList) {
+                const value = customAmenityInput.value.trim();
+                console.log('Input value:', value);
+                if (value && !customAmenities.includes(value)) {
+                    customAmenities.push(value);
+                    console.log('Added amenity, current list:', customAmenities);
+                    renderCustomAmenitiesGlobal();
+                    customAmenityInput.value = '';
+                } else {
+                    console.log('Amenity not added - empty or duplicate');
+                }
+            } else {
+                console.error('Custom amenity elements not found');
+            }
+        }
+
+        function renderCustomAmenitiesGlobal() {
+            if (!customAmenitiesList) {
+                customAmenitiesList = document.getElementById('customAmenitiesList');
+            }
+            if (customAmenitiesList) {
+                console.log('Rendering custom amenities:', customAmenities);
+                customAmenitiesList.innerHTML = '';
+                customAmenities.forEach((amenity, idx) => {
+                    const tag = document.createElement('span');
+                    tag.className = 'amenity-tag';
+                    tag.style.cssText = 'display: inline-block; background: #e1f0ff; color: #3498db; border-radius: 15px; font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.25rem; margin-bottom: 0.25rem;';
+                    tag.textContent = amenity;
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.textContent = '×';
+                    removeBtn.style.marginLeft = '0.5rem';
+                    removeBtn.style.background = 'none';
+                    removeBtn.style.border = 'none';
+                    removeBtn.style.color = '#e74c3c';
+                    removeBtn.style.cursor = 'pointer';
+                    removeBtn.onclick = function() {
+                        customAmenities.splice(idx, 1);
+                        renderCustomAmenitiesGlobal();
+                    };
+                    tag.appendChild(removeBtn);
+                    customAmenitiesList.appendChild(tag);
+                });
+            }
+        }
+
+        // Make function available globally
+        window.addCustomAmenityFallback = addCustomAmenityGlobal;
+
+        // Photo management functions
+        function removeCurrentPhoto(index) {
+            console.log('Removing current photo at index:', index);
+            const photoItem = document.querySelector(`[data-photo-index="${index}"]`);
+            if (photoItem) {
+                photoItem.remove();
+                updatePhotoCount();
+            }
+        }
+
+        function updatePhotoCount() {
+            const currentPhotos = document.querySelectorAll('#currentPhotos .photo-item').length;
+            const newPhotos = document.querySelectorAll('#photoPreview .photo-item').length;
+            const totalPhotos = currentPhotos + newPhotos;
+            
+            console.log(`Photo count - Current: ${currentPhotos}, New: ${newPhotos}, Total: ${totalPhotos}`);
+            
+            // Update the form text to show current count
+            const formText = document.querySelector('#photoPreview').nextElementSibling;
+            if (formText) {
+                formText.textContent = `Add more photos to your listing. Current total: ${totalPhotos}/6 photos. Supported formats: JPG, PNG, WebP. Max size: 5MB per image.`;
+            }
+            
+            return totalPhotos;
+        }
+
+        // Make functions globally available
+        window.removeCurrentPhoto = removeCurrentPhoto;
+        window.updatePhotoCount = updatePhotoCount;
+
         document.addEventListener('DOMContentLoaded', function() {
             const photoUpload = document.getElementById('photoUpload');
             const photosInput = document.getElementById('photos');
@@ -391,8 +541,11 @@
             function updatePhotoPreview() {
                 photoPreview.innerHTML = '';
                 
-                if (photosInput.files.length > 6) {
-                    alert('You can only upload a maximum of 6 photos');
+                const currentPhotoCount = document.querySelectorAll('#currentPhotos .photo-item').length;
+                const maxNewPhotos = 6 - currentPhotoCount;
+                
+                if (photosInput.files.length > maxNewPhotos) {
+                    alert(`You can only add ${maxNewPhotos} more photos. You currently have ${currentPhotoCount} photos.`);
                     photosInput.value = '';
                     return;
                 }
@@ -433,6 +586,9 @@
                     
                     reader.readAsDataURL(file);
                 }
+                
+                // Update photo count display
+                updatePhotoCount();
             }
 
             // Initialize map
@@ -499,13 +655,23 @@
 
             // Function to update input values
             function updateInputs(latlng) {
+                if (latlng && typeof latlng.lat === 'number' && typeof latlng.lng === 'number') {
                 latitudeInput.value = latlng.lat.toFixed(6);
                 longitudeInput.value = latlng.lng.toFixed(6);
+                } else {
+                    console.error('Invalid latlng object:', latlng);
+                }
             }
 
             // Add marker if coordinates exist
             if (latitudeInput.value && longitudeInput.value) {
-                updateMarker([latitudeInput.value, longitudeInput.value]);
+                const lat = parseFloat(latitudeInput.value);
+                const lng = parseFloat(longitudeInput.value);
+                if (!isNaN(lat) && !isNaN(lng)) {
+                    updateMarker([lat, lng]);
+                } else {
+                    console.log('Invalid coordinates, skipping marker placement');
+                }
             }
 
             // Handle map click
@@ -532,6 +698,86 @@
                 return div;
             };
             instructions.addTo(map);
+
+            // Custom amenities logic - initialize elements and event listeners
+            customAmenityInput = document.getElementById('customAmenityInput');
+            const addCustomAmenityBtn = document.getElementById('addCustomAmenity');
+            customAmenitiesList = document.getElementById('customAmenitiesList');
+            
+            console.log('Custom amenity elements found:', {
+                input: !!customAmenityInput,
+                button: !!addCustomAmenityBtn,
+                list: !!customAmenitiesList
+            });
+
+            // Render existing custom amenities on page load
+            renderCustomAmenitiesGlobal();
+            
+            // Initialize photo count display
+            updatePhotoCount();
+
+            // Add event listeners if elements exist
+            if (addCustomAmenityBtn) {
+                addCustomAmenityBtn.addEventListener('click', function(e) {
+                    console.log('Button clicked event fired');
+                    e.preventDefault();
+                    addCustomAmenityGlobal();
+                });
+            }
+            
+            // Allow pressing Enter to add amenity
+            if (customAmenityInput) {
+                customAmenityInput.addEventListener('keypress', function(e) {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCustomAmenityGlobal();
+                    }
+                });
+            }
+
+            // On form submit, add custom amenities as hidden inputs
+            if (listingForm) {
+                listingForm.addEventListener('submit', function(e) {
+                    console.log('=== FORM SUBMISSION DEBUG ===');
+                    
+                    // Remove any previous hidden inputs
+                    document.querySelectorAll('input[name="custom_amenities[]"]').forEach(e => e.remove());
+                    
+                    console.log('Form submit - custom amenities:', customAmenities);
+                    if (customAmenities && customAmenities.length > 0) {
+                        customAmenities.forEach(amenity => {
+                            const input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'custom_amenities[]';
+                            input.value = amenity;
+                            listingForm.appendChild(input);
+                            console.log('Added hidden input:', input.name, '=', input.value);
+                        });
+                    }
+                    
+                    // Debug: Log all keep_photos[] inputs
+                    const keepPhotosInputs = document.querySelectorAll('input[name="keep_photos[]"]');
+                    console.log('Keep photos inputs found:', keepPhotosInputs.length);
+                    keepPhotosInputs.forEach((input, index) => {
+                        console.log(`Keep photo ${index}:`, input.value, 'Parent:', input.parentElement.className);
+                    });
+                    
+                    // Debug: Log all form data
+                    const formData = new FormData(listingForm);
+                    console.log('All form data:');
+                    for (let [key, value] of formData.entries()) {
+                        if (key === 'keep_photos[]' || key === 'keep_photos' || key === 'new_photos') {
+                            console.log(`  ${key}:`, value);
+                        }
+                    }
+                    
+                    // Debug: Check if any photos are being uploaded
+                    const newPhotosInput = document.getElementById('photos');
+                    console.log('New photos selected:', newPhotosInput.files.length);
+                    
+                    console.log('=== END FORM DEBUG ===');
+                });
+            }
         });
     </script>
 </body>

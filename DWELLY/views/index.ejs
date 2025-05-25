@@ -251,6 +251,316 @@
         .stat i {
             color: #3498db;
         }
+        
+        /* Search and Filter Styles */
+        .search-filter-container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 2rem;
+        }
+        
+        .search-filter-form {
+            width: 100%;
+        }
+        
+        .search-bar {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            align-items: center;
+            background: white;
+            border-radius: 50px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 0.5rem;
+        }
+        
+        .search-input-group {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .search-input-group i {
+            position: absolute;
+            left: 1rem;
+            color: #7f8c8d;
+            z-index: 1;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            background: transparent;
+        }
+        
+        .search-input:focus {
+            outline: none;
+        }
+        
+        .filter-toggle-btn {
+            width: 50px;
+            height: 50px;
+            background: #f8f9fa;
+            color: #7f8c8d;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .filter-toggle-btn:hover,
+        .filter-toggle-btn.active {
+            background: #3498db;
+            color: white;
+        }
+        
+        .search-btn {
+            width: 50px;
+            height: 50px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 1.1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .search-btn:hover {
+            background: #2980b9;
+            transform: scale(1.05);
+        }
+        
+        .search-examples {
+            text-align: center;
+            margin-top: 0.5rem;
+            color: #7f8c8d;
+        }
+        
+        .search-examples small {
+            font-size: 0.85rem;
+        }
+        
+        .example-tag {
+            display: inline-block;
+            background: #f8f9fa;
+            color: #495057;
+            padding: 0.2rem 0.5rem;
+            margin: 0 0.25rem;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+        
+        .example-tag:hover {
+            background: #3498db;
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        .filters-panel {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            animation: slideDown 0.3s ease;
+        }
+        
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        .filters-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .filter-group label {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #2c3e50;
+        }
+        
+        .filter-select,
+        .filter-input {
+            padding: 0.75rem;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            background: white;
+            transition: border-color 0.3s ease;
+        }
+        
+        .filter-select:focus,
+        .filter-input:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        
+        .filter-actions {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .apply-filters-btn {
+            padding: 0.75rem 1.5rem;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .apply-filters-btn:hover {
+            background: #2980b9;
+        }
+        
+        .clear-filters-btn {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            color: #7f8c8d;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .clear-filters-btn:hover {
+            background: #f8f9fa;
+            color: #2c3e50;
+        }
+        
+        .results-summary {
+            margin-bottom: 2rem;
+        }
+        
+        .results-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+        }
+        
+        .results-info p {
+            margin: 0;
+            font-size: 1.1rem;
+            color: #2c3e50;
+            font-weight: 600;
+        }
+        
+        .active-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            align-items: center;
+        }
+        
+        .active-filters span:first-child {
+            font-weight: 600;
+            margin-right: 0.5rem;
+        }
+        
+        .filter-tag {
+            background: #e1f0ff;
+            color: #3498db;
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+        
+        /* Responsive Design for Search */
+        @media (max-width: 768px) {
+            .search-filter-container {
+                padding: 0 1rem;
+            }
+            
+            .search-bar {
+                padding: 0.25rem;
+            }
+            
+            .search-input {
+                padding: 0.75rem 0.75rem 0.75rem 2.5rem;
+            }
+            
+            .filter-toggle-btn,
+            .search-btn {
+                width: 45px;
+                height: 45px;
+                font-size: 1rem;
+            }
+            
+            .filters-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .filter-actions {
+                flex-direction: column;
+            }
+            
+            .apply-filters-btn,
+            .clear-filters-btn {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            .results-info {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .active-filters {
+                width: 100%;
+            }
+            
+            .search-examples {
+                margin-top: 0.75rem;
+            }
+            
+            .example-tag {
+                margin: 0.1rem;
+                font-size: 0.8rem;
+            }
+        }
     </style>
     <!-- Add Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
@@ -278,6 +588,177 @@
     </header>
 
     <main>
+        <!-- Search and Filter Section -->
+        <div class="search-filter-container">
+            <form class="search-filter-form" method="GET" action="/">
+                <!-- Main Search Bar -->
+                <div class="search-bar">
+                    <div class="search-input-group">
+                        <i class="fas fa-search"></i>
+                        <input type="text" 
+                               name="search" 
+                               placeholder="Search by location, rental type, price, amenities..." 
+                               value="<%= filters.search %>"
+                               class="search-input">
+                    </div>
+                    <button type="button" class="filter-toggle-btn" onclick="toggleFilters()">
+                        <i class="fas fa-filter"></i>
+                    </button>
+                    <button type="submit" class="search-btn">
+                        <i class="fas fa-search"></i>
+                    </button>
+                </div>
+                
+                <!-- Search Examples -->
+                <div class="search-examples">
+                    <small>
+                        <strong>Try searching:</strong> 
+                        <span class="example-tag" onclick="searchExample('apartment')">apartment</span>
+                        <span class="example-tag" onclick="searchExample('5000')">₱5000</span>
+                        <span class="example-tag" onclick="searchExample('wifi')">wifi</span>
+                        <span class="example-tag" onclick="searchExample('private bathroom')">private bathroom</span>
+                        <span class="example-tag" onclick="searchExample('Lahug')">Lahug</span>
+                    </small>
+                </div>
+                
+                <!-- Advanced Filters (Hidden by default) -->
+                <div class="filters-panel" id="filtersPanel" style="display: none;">
+                    <div class="filters-grid">
+                        <div class="filter-group">
+                            <label>Barangay</label>
+                            <select name="barangay" class="filter-select">
+                                <option value="">All Barangays</option>
+                                <% filterOptions.barangays.forEach(barangay => { %>
+                                    <option value="<%= barangay %>" <%= filters.barangay === barangay ? 'selected' : '' %>>
+                                        <%= barangay %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>City</label>
+                            <select name="city" class="filter-select">
+                                <option value="">All Cities</option>
+                                <% filterOptions.cities.forEach(city => { %>
+                                    <option value="<%= city %>" <%= filters.city === city ? 'selected' : '' %>>
+                                        <%= city %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Property Type</label>
+                            <select name="type" class="filter-select">
+                                <option value="">All Types</option>
+                                <% filterOptions.roomTypes.forEach(roomType => { %>
+                                    <option value="<%= roomType.type_name %>" <%= filters.type === roomType.type_name ? 'selected' : '' %>>
+                                        <%= roomType.display_name %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Number of Rooms</label>
+                            <select name="rooms" class="filter-select">
+                                <option value="">Any</option>
+                                <option value="1" <%= filters.rooms === '1' ? 'selected' : '' %>>1 Room</option>
+                                <option value="2" <%= filters.rooms === '2' ? 'selected' : '' %>>2 Rooms</option>
+                                <option value="3" <%= filters.rooms === '3' ? 'selected' : '' %>>3 Rooms</option>
+                                <option value="4" <%= filters.rooms === '4' ? 'selected' : '' %>>4+ Rooms</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Bathroom Type</label>
+                            <select name="bathroom" class="filter-select">
+                                <option value="">Any</option>
+                                <option value="private" <%= filters.bathroom === 'private' ? 'selected' : '' %>>Private</option>
+                                <option value="shared" <%= filters.bathroom === 'shared' ? 'selected' : '' %>>Shared</option>
+                            </select>
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Min Price (₱)</label>
+                            <input type="number" 
+                                   name="min_price" 
+                                   placeholder="0" 
+                                   value="<%= filters.min_price %>"
+                                   class="filter-input">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Max Price (₱)</label>
+                            <input type="number" 
+                                   name="max_price" 
+                                   placeholder="50000" 
+                                   value="<%= filters.max_price %>"
+                                   class="filter-input">
+                        </div>
+                        
+                        <div class="filter-group">
+                            <label>Sort By</label>
+                            <select name="sort" class="filter-select">
+                                <option value="newest" <%= filters.sort === 'newest' ? 'selected' : '' %>>Newest First</option>
+                                <option value="oldest" <%= filters.sort === 'oldest' ? 'selected' : '' %>>Oldest First</option>
+                                <option value="price_low" <%= filters.sort === 'price_low' ? 'selected' : '' %>>Price: Low to High</option>
+                                <option value="price_high" <%= filters.sort === 'price_high' ? 'selected' : '' %>>Price: High to Low</option>
+                                <option value="rating" <%= filters.sort === 'rating' ? 'selected' : '' %>>Highest Rated</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Filter Actions -->
+                    <div class="filter-actions">
+                        <button type="submit" class="apply-filters-btn">
+                            <i class="fas fa-check"></i> Apply Filters
+                        </button>
+                        <a href="/" class="clear-filters-btn">
+                            <i class="fas fa-times"></i> Clear All
+                        </a>
+                    </div>
+                </div>
+            </form>
+            
+            <!-- Results Summary -->
+            <div class="results-summary">
+                <div class="results-info">
+                    <p><strong><%= listings.length %></strong> listings found</p>
+                    <% if (filters.search || filters.barangay || filters.city || filters.type || filters.min_price || filters.max_price || filters.rooms || filters.bathroom) { %>
+                        <div class="active-filters">
+                            <span>Active filters:</span>
+                            <% if (filters.search) { %>
+                                <span class="filter-tag">Search: "<%= filters.search %>"</span>
+                            <% } %>
+                            <% if (filters.barangay) { %>
+                                <span class="filter-tag">Barangay: <%= filters.barangay %></span>
+                            <% } %>
+                            <% if (filters.city) { %>
+                                <span class="filter-tag">City: <%= filters.city %></span>
+                            <% } %>
+                            <% if (filters.type) { %>
+                                <span class="filter-tag">Type: <%= filters.type %></span>
+                            <% } %>
+                            <% if (filters.rooms) { %>
+                                <span class="filter-tag">Rooms: <%= filters.rooms %></span>
+                            <% } %>
+                            <% if (filters.bathroom) { %>
+                                <span class="filter-tag">Bathroom: <%= filters.bathroom %></span>
+                            <% } %>
+                            <% if (filters.min_price) { %>
+                                <span class="filter-tag">Min: ₱<%= filters.min_price %></span>
+                            <% } %>
+                            <% if (filters.max_price) { %>
+                                <span class="filter-tag">Max: ₱<%= filters.max_price %></span>
+                            <% } %>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+
         <div class="listings-container">
             <% if (listings && listings.length > 0) { %>
                 <!-- Debug output -->
@@ -314,26 +795,30 @@
                                 </div>
                                 <div class="listing-amenities">
                                     <% let amenityCount = 0; %>
-                                    <% if (listing.has_wifi && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</span>
-                                    <% } %>
-                                    <% if (listing.has_cctv && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-video"></i> CCTV</span>
-                                    <% } %>
-                                    <% if (listing.is_airconditioned && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-snowflake"></i> AC</span>
-                                    <% } %>
-                                    <% if (listing.has_parking && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-parking"></i> Parking</span>
-                                    <% } %>
-                                    <% if (listing.has_own_electricity && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-bolt"></i> Own Meter</span>
-                                    <% } %>
-                                    <% if (listing.has_own_water && ++amenityCount) { %>
-                                        <span class="amenity-tag"><i class="fas fa-tint"></i> Own Water</span>
-                                    <% } %>
-                                    <% if (amenityCount > 4) { %>
-                                        ...
+                                    <% if (typeof listing.allAmenities !== 'undefined' && listing.allAmenities.length > 0) { 
+                                        listing.allAmenities.forEach(amenity => { 
+                                            if (amenityCount < 4) {
+                                                amenityCount++;
+                                                // Choose icon based on amenity name
+                                                let icon = 'fas fa-check';
+                                                const amenityName = amenity.amenity_name.toLowerCase();
+                                                if (amenityName.includes('wifi')) icon = 'fas fa-wifi';
+                                                else if (amenityName.includes('cctv')) icon = 'fas fa-video';
+                                                else if (amenityName.includes('air') || amenityName.includes('ac')) icon = 'fas fa-snowflake';
+                                                else if (amenityName.includes('parking')) icon = 'fas fa-parking';
+                                                else if (amenityName.includes('electricity')) icon = 'fas fa-bolt';
+                                                else if (amenityName.includes('water')) icon = 'fas fa-tint';
+                                    %>
+                                        <span class="amenity-tag default-amenity">
+                                            <i class="<%= icon %>"></i> <%= amenity.amenity_name %>
+                                        </span>
+                                    <% } 
+                                        });
+                                        if (listing.allAmenities.length > 4) { %>
+                                            <span class="amenity-tag">+<%= listing.allAmenities.length - 4 %> more</span>
+                                    <% }
+                                    } else { %>
+                                        <span class="no-amenities">No amenities listed</span>
                                     <% } %>
                                 </div>
                                 <% if (listing.price) { %>
@@ -408,6 +893,42 @@
             latitude: l.latitude,
             longitude: l.longitude
         }))) %>;
+        
+        // Toggle filters function
+        function toggleFilters() {
+            const filtersPanel = document.getElementById('filtersPanel');
+            const filterBtn = document.querySelector('.filter-toggle-btn');
+            
+            if (filtersPanel.style.display === 'none' || filtersPanel.style.display === '') {
+                filtersPanel.style.display = 'block';
+                filterBtn.classList.add('active');
+            } else {
+                filtersPanel.style.display = 'none';
+                filterBtn.classList.remove('active');
+            }
+        }
+        
+        // Search example function
+        function searchExample(term) {
+            const searchInput = document.querySelector('input[name="search"]');
+            searchInput.value = term;
+            searchInput.focus();
+            
+            // Optional: Auto-submit the search
+            // document.querySelector('.search-filter-form').submit();
+        }
+        
+        // Show filters if any filters are active
+        document.addEventListener('DOMContentLoaded', function() {
+            const hasActiveFilters = <%= JSON.stringify(!!(filters.search || filters.barangay || filters.city || filters.type || filters.min_price || filters.max_price || filters.rooms || filters.bathroom)) %>;
+            
+            if (hasActiveFilters) {
+                const filtersPanel = document.getElementById('filtersPanel');
+                const filterBtn = document.querySelector('.filter-toggle-btn');
+                filtersPanel.style.display = 'block';
+                filterBtn.classList.add('active');
+            }
+        });
     </script>
     <!-- Load main.js -->
     <script src="/js/main.js"></script>

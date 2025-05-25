@@ -17,7 +17,7 @@ router.get('/', isAuthenticated, async (req, res) => {
         const [favorites] = await pool.query(`
             SELECT p.*, u.full_name as owner_name,
                    rt.type_name, rt.display_name as type_display,
-                   GROUP_CONCAT(ph.file_path) as photos,
+                   GROUP_CONCAT(DISTINCT ph.file_path) as photos,
                    (SELECT COUNT(*) FROM favorites WHERE post_id = p.post_id) as favorite_count,
                    (SELECT AVG(stars) FROM ratings WHERE post_id = p.post_id) as average_rating,
                    (SELECT COUNT(*) FROM ratings WHERE post_id = p.post_id) as rating_count
@@ -26,10 +26,31 @@ router.get('/', isAuthenticated, async (req, res) => {
             JOIN room_types rt ON p.type_id = rt.type_id
             JOIN favorites f ON p.post_id = f.post_id
             LEFT JOIN photos ph ON p.post_id = ph.post_id
-            WHERE f.user_id = ? AND p.is_flagged = false
+            WHERE f.user_id = ? AND p.is_flagged = false AND p.status != 'archived'
             GROUP BY p.post_id
             ORDER BY f.created_at DESC
         `, [req.session.user.id]);
+
+        // Get amenities for each favorite listing
+        const favoriteIds = favorites.map(f => f.post_id);
+        let amenitiesMap = {};
+        
+        if (favoriteIds.length > 0) {
+            const [amenities] = await pool.query(`
+                SELECT post_id, amenity_name, amenity_type 
+                FROM post_amenities 
+                WHERE post_id IN (${favoriteIds.map(() => '?').join(',')})
+                ORDER BY amenity_type ASC, amenity_name ASC
+            `, favoriteIds);
+            
+            // Group amenities by post_id
+            amenities.forEach(amenity => {
+                if (!amenitiesMap[amenity.post_id]) {
+                    amenitiesMap[amenity.post_id] = [];
+                }
+                amenitiesMap[amenity.post_id].push(amenity);
+            });
+        }
 
         // Process the favorites data
         const processedFavorites = favorites.map(favorite => ({
@@ -40,12 +61,7 @@ router.get('/', isAuthenticated, async (req, res) => {
             favorite_count: parseInt(favorite.favorite_count) || 0,
             rating_count: parseInt(favorite.rating_count) || 0,
             type: favorite.type_display || 'Unknown Type',
-            has_wifi: favorite.has_wifi ? true : false,
-            has_cctv: favorite.has_cctv ? true : false,
-            is_airconditioned: favorite.is_airconditioned ? true : false,
-            has_parking: favorite.has_parking ? true : false,
-            has_own_electricity: favorite.has_own_electricity ? true : false,
-            has_own_water: favorite.has_own_water ? true : false,
+            allAmenities: amenitiesMap[favorite.post_id] || [],
             barangay: favorite.barangay || '',
             city: favorite.city || 'Davao City'
         }));

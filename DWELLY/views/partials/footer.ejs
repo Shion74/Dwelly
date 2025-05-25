@@ -27,6 +27,14 @@
             </div>
         </div>
     </footer>
+    
+    <!-- Admin Floating Button -->
+    <% if (user && user.role === 'admin') { %>
+        <a href="/admin" class="admin-float-btn" title="Admin Dashboard">
+            <i class="fas fa-shield-alt"></i>
+        </a>
+    <% } %>
+    
     <script src="/js/main.js"></script>
 </body>
 </html> 

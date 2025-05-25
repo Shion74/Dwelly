@@ -253,6 +253,23 @@ footer {
 .amenity-tag i {
     font-size: 0.875rem;
 }
+
+/* Amenity type specific styles */
+.amenity-tag.default-amenity {
+    background: #e1f0ff;
+    color: #3498db;
+}
+
+.amenity-tag.custom-amenity {
+    background: #e1f0ff;
+    color: #3498db;
+}
+
+.no-amenities {
+    color: #7f8c8d;
+    font-style: italic;
+    font-size: 0.875rem;
+}
 .room-type-badge {
     display: inline-block;
     padding: 0.25rem 0.75rem;
@@ -305,4 +322,35 @@ footer {
 }
 .create-listing-btn:hover {
     background: #2980b9;
+}
+
+/* Admin Floating Button */
+.admin-float-btn {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #e74c3c;
+    color: white;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    font-size: 1.2rem;
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
+    transition: all 0.3s ease;
+    z-index: 1000;
+}
+
+.admin-float-btn:hover {
+    background: #c0392b;
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(231, 76, 60, 0.6);
+    color: white;
+}
+
+.admin-float-btn i {
+    font-size: 1.5rem;
 } 

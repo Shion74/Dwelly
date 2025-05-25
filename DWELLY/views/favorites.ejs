@@ -68,26 +68,30 @@
                                     </div>
                                     <div class="listing-amenities">
                                         <% let amenityCount = 0; %>
-                                        <% if (listing.has_wifi && ++amenityCount) { %>
-                                            <span class="amenity-tag"><i class="fas fa-wifi"></i> WiFi</span>
-                                        <% } %>
-                                        <% if (listing.has_cctv && ++amenityCount) { %>
-                                            <span class="amenity-tag"><i class="fas fa-video"></i> CCTV</span>
-                                        <% } %>
-                                        <% if (listing.is_airconditioned && ++amenityCount) { %>
-                                            <span class="amenity-tag"><i class="fas fa-snowflake"></i> AC</span>
-                                        <% } %>
-                                        <% if (listing.has_parking && ++amenityCount) { %>
-                                            <span class="amenity-tag"><i class="fas fa-parking"></i> Parking</span>
-                                        <% } %>
-                                        <% if (listing.has_own_electricity && ++amenityCount) { %>
-                                            <span class="amenity-tag"><i class="fas fa-bolt"></i> Own Meter</span>
-                                        <% } %>
-                                        <% if (listing.has_own_water && ++amenityCount) { %>
-                                            <span class="amenity-tag"><i class="fas fa-tint"></i> Own Water</span>
-                                        <% } %>
-                                        <% if (amenityCount > 4) { %>
-                                            ...
+                                        <% if (typeof listing.allAmenities !== 'undefined' && listing.allAmenities.length > 0) { 
+                                            listing.allAmenities.forEach(amenity => { 
+                                                if (amenityCount < 4) {
+                                                    amenityCount++;
+                                                    // Choose icon based on amenity name
+                                                    let icon = 'fas fa-check';
+                                                    const amenityName = amenity.amenity_name.toLowerCase();
+                                                    if (amenityName.includes('wifi')) icon = 'fas fa-wifi';
+                                                    else if (amenityName.includes('cctv')) icon = 'fas fa-video';
+                                                    else if (amenityName.includes('air') || amenityName.includes('ac')) icon = 'fas fa-snowflake';
+                                                    else if (amenityName.includes('parking')) icon = 'fas fa-parking';
+                                                    else if (amenityName.includes('electricity')) icon = 'fas fa-bolt';
+                                                    else if (amenityName.includes('water')) icon = 'fas fa-tint';
+                                        %>
+                                            <span class="amenity-tag default-amenity">
+                                                <i class="<%= icon %>"></i> <%= amenity.amenity_name %>
+                                            </span>
+                                        <% } 
+                                            });
+                                            if (listing.allAmenities.length > 4) { %>
+                                                <span class="amenity-tag">+<%= listing.allAmenities.length - 4 %> more</span>
+                                        <% }
+                                        } else { %>
+                                            <span class="no-amenities">No amenities listed</span>
                                         <% } %>
                                     </div>
                                 </div>

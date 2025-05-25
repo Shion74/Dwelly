@@ -26,13 +26,14 @@
                                 <i class="fas fa-user"></i> <%= user.full_name %>
                             </a>
                             <ul class="dropdown-menu">
+                                <% if (user.role === 'admin') { %>
+                                    <li><a href="/admin" style="background: #e74c3c; color: white; font-weight: bold;"><i class="fas fa-shield-alt"></i> Admin Dashboard</a></li>
+                                    <li style="border-top: 1px solid #eee; margin-top: 0.5rem; padding-top: 0.5rem;"></li>
+                                <% } %>
                                 <li><a href="/users/profile">My Profile</a></li>
                                 <li><a href="/users/listings">My Listings</a></li>
                                 <li><a href="/users/favorites">Favorites</a></li>
                                 <li><a href="/users/ratings">My Ratings</a></li>
-                                <% if (user.role === 'admin') { %>
-                                    <li><a href="/admin">Admin Dashboard</a></li>
-                                <% } %>
                                 <li><a href="/auth/logout">Logout</a></li>
                             </ul>
                         </li>

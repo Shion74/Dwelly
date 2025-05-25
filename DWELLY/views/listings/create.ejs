@@ -682,13 +682,18 @@
             listingForm.addEventListener('submit', function() {
                 // Remove any previous hidden inputs
                 document.querySelectorAll('input[name="custom_amenities[]"]').forEach(e => e.remove());
+                
+                console.log('Form submit - custom amenities:', customAmenities);
+                if (customAmenities.length > 0) {
                 customAmenities.forEach(amenity => {
                     const input = document.createElement('input');
                     input.type = 'hidden';
                     input.name = 'custom_amenities[]';
                     input.value = amenity;
                     listingForm.appendChild(input);
+                        console.log('Added hidden input:', input.name, '=', input.value);
                 });
+                }
             });
         });
     </script>

@@ -144,8 +144,8 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="contact_number">Phone Number</label>
-                        <input type="tel" id="contact_number" name="contact_number" value="<%= profileData.contact_number || '' %>">
+                        <label for="phone_number">Phone Number</label>
+                        <input type="tel" id="phone_number" name="phone_number" value="<%= profileData.phone_number || '' %>">
                     </div>
 
                     <% if (profileData.role === 'student') { %>
@@ -181,7 +181,7 @@
                             <select id="course_id" name="course_id">
                                 <option value="">Select Course</option>
                                 <% courses.forEach(course => { %>
-                                    <option value="<%= course.course_id %>" <%= profileData.course_id == course.course_id ? 'selected' : '' %>>
+                                    <option value="<%= course.course_id %>" data-department="<%= course.department_id %>" <%= profileData.course_id == course.course_id ? 'selected' : '' %>>
                                         <%= course.name %>
                                     </option>
                                 <% }); %>
@@ -201,5 +201,45 @@
     <footer>
         <p>&copy; 2024 Dwelly. All rights reserved.</p>
     </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const departmentSelect = document.getElementById('department_id');
+            const courseSelect = document.getElementById('course_id');
+            
+            if (departmentSelect && courseSelect) {
+                // Store all course options
+                const allCourseOptions = Array.from(courseSelect.options).slice(1); // Skip the first "Select Course" option
+                
+                // Function to filter courses by department
+                function filterCourses() {
+                    const selectedDepartment = departmentSelect.value;
+                    
+                    // Clear current course options (except the first one)
+                    courseSelect.innerHTML = '<option value="">Select Course</option>';
+                    
+                    if (selectedDepartment) {
+                        // Add courses that belong to the selected department
+                        allCourseOptions.forEach(option => {
+                            if (option.dataset.department === selectedDepartment) {
+                                courseSelect.appendChild(option.cloneNode(true));
+                            }
+                        });
+                    } else {
+                        // If no department selected, show all courses
+                        allCourseOptions.forEach(option => {
+                            courseSelect.appendChild(option.cloneNode(true));
+                        });
+                    }
+                }
+                
+                // Filter courses when department changes
+                departmentSelect.addEventListener('change', filterCourses);
+                
+                // Initial filter on page load
+                filterCourses();
+            }
+        });
+    </script>
 </body>
 </html> 

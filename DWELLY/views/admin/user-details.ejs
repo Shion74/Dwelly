@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .admin-layout {
+            display: flex;
+            min-height: 100vh;
+        }
+        
+        .admin-sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 0;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+        }
+        
+        .admin-content {
+            flex: 1;
+            margin-left: 250px;
+            padding: 2rem;
+            background: #f8f9fa;
+            min-height: 100vh;
+        }
+        
+        .admin-header {
+            background: #34495e;
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #34495e;
+        }
+        
+        .admin-header h2 {
+            margin: 0;
+            color: white;
+            font-size: 1.2rem;
+        }
+        
+        .admin-nav {
+            padding: 0;
+        }
+        
+        .admin-nav ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .admin-nav li {
+            border-bottom: 1px solid #34495e;
+        }
+        
+        .admin-nav a {
+            display: block;
+            padding: 1rem 1.5rem;
+            color: #bdc3c7;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .admin-nav a:hover {
+            background: #34495e;
+            color: white;
+        }
+        
+        .admin-nav a.active {
+            background: #34495e;
+            color: white;
+        }
+        
+        .admin-nav i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        
+        .page-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+        
+        .page-title {
+            margin: 0;
+            color: #2c3e50;
+        }
+        
+        .user-profile-grid {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .profile-card {
+            background: white;
+            border-radius: 10px;
+            padding: 2rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .user-avatar-large {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: #3498db;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 2rem;
+            margin: 0 auto 1rem auto;
+        }
+        
+        .user-info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #ecf0f1;
+        }
+        
+        .user-info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .info-value {
+            color: #7f8c8d;
+        }
+        
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-blocked {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .role-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 15px;
+            font-size: 0.8rem;
+            font-weight: bold;
+        }
+        
+        .role-student {
+            background: #cce5ff;
+            color: #0066cc;
+        }
+        
+        .role-staff {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .role-admin {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+        
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        
+        .form-control {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 5px;
+            text-decoration: none;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-primary:hover {
+            background: #2980b9;
+        }
+        
+        .btn-success {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .btn-success:hover {
+            background: #229954;
+        }
+        
+        .btn-danger {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .btn-danger:hover {
+            background: #c0392b;
+        }
+        
+        .btn-warning {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #e67e22;
+        }
+        
+        .btn-secondary {
+            background: #95a5a6;
+            color: white;
+        }
+        
+        .btn-secondary:hover {
+            background: #7f8c8d;
+        }
+        
+        .activity-section {
+            margin-top: 2rem;
+        }
+        
+        .activity-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+        
+        .activity-card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .activity-card h3 {
+            margin: 0 0 1rem 0;
+            color: #2c3e50;
+            border-bottom: 2px solid #ecf0f1;
+            padding-bottom: 0.5rem;
+        }
+        
+        .activity-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .activity-item {
+            padding: 0.75rem 0;
+            border-bottom: 1px solid #ecf0f1;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .activity-item:last-child {
+            border-bottom: none;
+        }
+        
+        .activity-info h4 {
+            margin: 0 0 0.25rem 0;
+            font-size: 0.9rem;
+            color: #2c3e50;
+        }
+        
+        .activity-info p {
+            margin: 0;
+            font-size: 0.8rem;
+            color: #7f8c8d;
+        }
+        
+        .activity-time {
+            font-size: 0.8rem;
+            color: #95a5a6;
+        }
+        
+        .admin-user-info {
+            background: #34495e;
+            padding: 1rem 1.5rem;
+            border-top: 1px solid #2c3e50;
+            margin-top: auto;
+        }
+        
+        .admin-user-info p {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #bdc3c7;
+        }
+        
+        .admin-user-info strong {
+            color: white;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 5px;
+            margin-bottom: 1rem;
+        }
+        
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .form-actions {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-layout">
+        <!-- Sidebar -->
+        <div class="admin-sidebar">
+            <div class="admin-header">
+                <h2><i class="fas fa-shield-alt"></i> Admin Panel</h2>
+            </div>
+            
+            <nav class="admin-nav">
+                <ul>
+                    <li><a href="/admin"><i class="fas fa-tachometer-alt"></i> Dashboard</a></li>
+                    <li><a href="/admin/users" class="active"><i class="fas fa-users"></i> Users</a></li>
+                    <li><a href="/admin/posts"><i class="fas fa-home"></i> Posts</a></li>
+                    <li><a href="/admin/reports"><i class="fas fa-flag"></i> Reports</a></li>
+                    <li><a href="/" target="_blank"><i class="fas fa-globe"></i> View Site</a></li>
+                    <li><a href="/auth/logout"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                </ul>
+            </nav>
+            
+            <div class="admin-user-info">
+                <p><strong><%= admin.full_name %></strong></p>
+                <p>Administrator</p>
+            </div>
+        </div>
+        
+        <!-- Main Content -->
+        <div class="admin-content">
+            <div class="page-header">
+                <h1 class="page-title">User Details</h1>
+                <div>
+                    <a href="/admin/users" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Back to Users
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Flash Messages -->
+            <% if (typeof messages !== 'undefined' && messages.success) { %>
+                <div class="alert alert-success">
+                    <%= messages.success %>
+                </div>
+            <% } %>
+            
+            <% if (typeof messages !== 'undefined' && messages.error) { %>
+                <div class="alert alert-danger">
+                    <%= messages.error %>
+                </div>
+            <% } %>
+            
+            <!-- User Profile -->
+            <div class="user-profile-grid">
+                <!-- User Info Card -->
+                <div class="profile-card">
+                    <div class="user-avatar-large">
+                        <%= targetUser.full_name.charAt(0).toUpperCase() %>
+                    </div>
+                    
+                    <div style="text-align: center; margin-bottom: 2rem;">
+                        <h2 style="margin: 0 0 0.5rem 0; color: #2c3e50;"><%= targetUser.full_name %></h2>
+                        <span class="role-badge role-<%= targetUser.role %>">
+                            <%= targetUser.role.charAt(0).toUpperCase() + targetUser.role.slice(1) %>
+                        </span>
+                        <span class="status-badge <%= targetUser.is_blocked ? 'status-blocked' : 'status-active' %>" style="margin-left: 0.5rem;">
+                            <%= targetUser.is_blocked ? 'Blocked' : 'Active' %>
+                        </span>
+                    </div>
+                    
+                    <div class="user-info-item">
+                        <span class="info-label">Email</span>
+                        <span class="info-value"><%= targetUser.email %></span>
+                    </div>
+                    
+                    <div class="user-info-item">
+                        <span class="info-label">ID Number</span>
+                        <span class="info-value"><%= targetUser.id_number %></span>
+                    </div>
+                    
+                    <div class="user-info-item">
+                        <span class="info-label">Phone</span>
+                        <span class="info-value"><%= targetUser.phone_number %></span>
+                    </div>
+                    
+                    <div class="user-info-item">
+                        <span class="info-label">Department</span>
+                        <span class="info-value"><%= targetUser.department_name || 'N/A' %></span>
+                    </div>
+                    
+                    <div class="user-info-item">
+                        <span class="info-label">Course</span>
+                        <span class="info-value"><%= targetUser.course_name || 'N/A' %></span>
+                    </div>
+                    
+                    <% if (targetUser.year_level) { %>
+                        <div class="user-info-item">
+                            <span class="info-label">Year Level</span>
+                            <span class="info-value"><%= targetUser.year_level %> Year</span>
+                        </div>
+                    <% } %>
+                    
+                    <div class="user-info-item">
+                        <span class="info-label">Joined</span>
+                        <span class="info-value"><%= new Date(targetUser.created_at).toLocaleDateString() %></span>
+                    </div>
+                    
+                    <div class="user-info-item">
+                        <span class="info-label">Posts</span>
+                        <span class="info-value"><%= posts.length %> listings</span>
+                    </div>
+                    
+                    <div class="user-info-item">
+                        <span class="info-label">Reports Made</span>
+                        <span class="info-value"><%= reports.length %> reports</span>
+                    </div>
+                    
+                    <!-- Quick Actions -->
+                    <div style="margin-top: 2rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                        <% if (targetUser.role !== 'admin') { %>
+                            <button onclick="toggleUserBlock(<%= targetUser.user_id %>, <%= targetUser.is_blocked %>)" 
+                                    class="btn <%= targetUser.is_blocked ? 'btn-success' : 'btn-warning' %>" style="flex: 1;">
+                                <i class="fas fa-<%= targetUser.is_blocked ? 'unlock' : 'lock' %>"></i>
+                                <%= targetUser.is_blocked ? 'Unblock' : 'Block' %> User
+                            </button>
+                            <button onclick="deleteUser(<%= targetUser.user_id %>)" 
+                                    class="btn btn-danger" style="flex: 1;">
+                                <i class="fas fa-trash"></i> Delete User
+                            </button>
+                        <% } %>
+                    </div>
+                </div>
+                
+                <!-- Edit Form -->
+                <div class="profile-card">
+                    <h3 style="margin: 0 0 1.5rem 0; color: #2c3e50;">Edit User Information</h3>
+                    
+                    <form action="/admin/users/<%= targetUser.user_id %>/update" method="POST">
+                        <div class="form-group">
+                            <label class="form-label" for="full_name">Full Name</label>
+                            <input type="text" id="full_name" name="full_name" class="form-control" 
+                                   value="<%= targetUser.full_name %>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="email">Email</label>
+                            <input type="email" id="email" name="email" class="form-control" 
+                                   value="<%= targetUser.email %>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="phone_number">Phone Number</label>
+                            <input type="tel" id="phone_number" name="phone_number" class="form-control" 
+                                   value="<%= targetUser.phone_number %>" required>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="role">Role</label>
+                            <select id="role" name="role" class="form-control" required>
+                                <option value="student" <%= targetUser.role === 'student' ? 'selected' : '' %>>Student</option>
+                                <option value="staff" <%= targetUser.role === 'staff' ? 'selected' : '' %>>Staff</option>
+                                <option value="admin" <%= targetUser.role === 'admin' ? 'selected' : '' %>>Admin</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="year_level">Year Level</label>
+                            <select id="year_level" name="year_level" class="form-control">
+                                <option value="">Select Year Level</option>
+                                <option value="1st" <%= targetUser.year_level === '1st' ? 'selected' : '' %>>1st Year</option>
+                                <option value="2nd" <%= targetUser.year_level === '2nd' ? 'selected' : '' %>>2nd Year</option>
+                                <option value="3rd" <%= targetUser.year_level === '3rd' ? 'selected' : '' %>>3rd Year</option>
+                                <option value="4th" <%= targetUser.year_level === '4th' ? 'selected' : '' %>>4th Year</option>
+                                <option value="5th" <%= targetUser.year_level === '5th' ? 'selected' : '' %>>5th Year</option>
+                                <option value="6th" <%= targetUser.year_level === '6th' ? 'selected' : '' %>>6th Year</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="department_id">Department</label>
+                            <select id="department_id" name="department_id" class="form-control">
+                                <option value="">Select Department</option>
+                                <% departments.forEach(dept => { %>
+                                    <option value="<%= dept.department_id %>" 
+                                            <%= targetUser.department_id == dept.department_id ? 'selected' : '' %>>
+                                        <%= dept.name %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label class="form-label" for="course_id">Course</label>
+                            <select id="course_id" name="course_id" class="form-control">
+                                <option value="">Select Course</option>
+                                <% courses.forEach(course => { %>
+                                    <option value="<%= course.course_id %>" 
+                                            data-department="<%= course.department_id %>"
+                                            <%= targetUser.course_id == course.course_id ? 'selected' : '' %>>
+                                        <%= course.name %>
+                                    </option>
+                                <% }); %>
+                            </select>
+                        </div>
+                        
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Save Changes
+                            </button>
+                            <a href="/admin/users" class="btn btn-secondary">Cancel</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- User Activity -->
+            <div class="activity-section">
+                <div class="activity-grid">
+                    <!-- User Posts -->
+                    <div class="activity-card">
+                        <h3>User Posts (<%= posts.length %>)</h3>
+                        <% if (posts.length > 0) { %>
+                            <ul class="activity-list">
+                                <% posts.forEach(post => { %>
+                                    <li class="activity-item">
+                                        <div class="activity-info">
+                                            <h4><%= post.type_display %> in <%= post.barangay %></h4>
+                                            <p>
+                                                <%= post.street %> • 
+                                                Status: <%= post.status %> • 
+                                                <% if (post.report_count > 0) { %>
+                                                    <span style="color: #e74c3c;"><%= post.report_count %> reports</span>
+                                                <% } else { %>
+                                                    No reports
+                                                <% } %>
+                                            </p>
+                                        </div>
+                                        <div class="activity-time">
+                                            <%= new Date(post.created_at).toLocaleDateString() %>
+                                        </div>
+                                    </li>
+                                <% }); %>
+                            </ul>
+                        <% } else { %>
+                            <p style="text-align: center; color: #7f8c8d; padding: 2rem;">
+                                No posts created yet
+                            </p>
+                        <% } %>
+                    </div>
+                    
+                    <!-- User Reports -->
+                    <div class="activity-card">
+                        <h3>Reports Made (<%= reports.length %>)</h3>
+                        <% if (reports.length > 0) { %>
+                            <ul class="activity-list">
+                                <% reports.forEach(report => { %>
+                                    <li class="activity-item">
+                                        <div class="activity-info">
+                                            <h4><%= report.type.toUpperCase() %> Report</h4>
+                                            <p><%= report.street %>, <%= report.barangay %></p>
+                                            <% if (report.reason) { %>
+                                                <p style="font-style: italic; margin-top: 0.25rem;">"<%= report.reason %>"</p>
+                                            <% } %>
+                                        </div>
+                                        <div class="activity-time">
+                                            <%= new Date(report.created_at).toLocaleDateString() %>
+                                        </div>
+                                    </li>
+                                <% }); %>
+                            </ul>
+                        <% } else { %>
+                            <p style="text-align: center; color: #7f8c8d; padding: 2rem;">
+                                No reports made yet
+                            </p>
+                        <% } %>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Filter courses by department
+        document.getElementById('department_id').addEventListener('change', function() {
+            const departmentId = this.value;
+            const courseSelect = document.getElementById('course_id');
+            const courseOptions = courseSelect.querySelectorAll('option');
+            
+            courseOptions.forEach(option => {
+                if (option.value === '') {
+                    option.style.display = 'block';
+                } else if (departmentId === '' || option.dataset.department === departmentId) {
+                    option.style.display = 'block';
+                } else {
+                    option.style.display = 'none';
+                }
+            });
+            
+            // Reset course selection if current selection is not valid for new department
+            const currentCourse = courseSelect.querySelector('option:checked');
+            if (currentCourse && currentCourse.dataset.department && 
+                departmentId && currentCourse.dataset.department !== departmentId) {
+                courseSelect.value = '';
+            }
+        });
+        
+        // Trigger department change on page load to filter courses
+        document.getElementById('department_id').dispatchEvent(new Event('change'));
+        
+        function toggleUserBlock(userId, isBlocked) {
+            const action = isBlocked ? 'unblock' : 'block';
+            const message = isBlocked ? 'unblock this user' : 'block this user';
+            
+            if (confirm(`Are you sure you want to ${message}?`)) {
+                fetch(`/admin/users/${userId}/toggle-block`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Failed to update user status');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to update user status');
+                });
+            }
+        }
+        
+        function deleteUser(userId) {
+            const confirmMessage = `⚠️ WARNING: This will permanently delete the user and all their data!\n\nThis action will:\n• Archive all user data to the archive tables\n• Delete all user's posts and related data\n• Remove the user account permanently\n\nThis action CANNOT be undone!\n\nTo confirm deletion, please type "DELETE" (without quotes) in the box below:`;
+            
+            const confirmation = prompt(confirmMessage);
+            
+            if (confirmation && confirmation.toUpperCase() === 'DELETE') {
+                const button = event.target.closest('button');
+                const originalText = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+                button.disabled = true;
+                
+                fetch(`/admin/users/${userId}/delete`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ User has been archived and deleted successfully!');
+                        window.location.href = '/admin/users';
+                    } else {
+                        alert('❌ Failed to delete user: ' + (data.error || 'Unknown error'));
+                        button.innerHTML = originalText;
+                        button.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('❌ Failed to delete user: Network error');
+                    button.innerHTML = originalText;
+                    button.disabled = false;
+                });
+            } else {
+                alert('Deletion cancelled. You must type "DELETE" (case-insensitive) to confirm.');
+            }
+        }
+    </script>
+</body>
+</html> 

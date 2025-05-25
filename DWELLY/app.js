@@ -124,6 +124,121 @@ app.get('/test-coordinates', async (req, res) => {
 app.get('/', async (req, res) => {
     try {
         console.log('Fetching listings for home page...');
+        
+        // Get search and filter parameters
+        const search = req.query.search || '';
+        const barangay = req.query.barangay || '';
+        const city = req.query.city || '';
+        const type = req.query.type || '';
+        const minPrice = req.query.min_price || '';
+        const maxPrice = req.query.max_price || '';
+        const rooms = req.query.rooms || '';
+        const bathroom = req.query.bathroom || '';
+        const sortBy = req.query.sort || 'newest';
+        
+        // Build WHERE clause
+        let whereClause = 'WHERE p.is_flagged = false AND p.status != \'archived\'';
+        let queryParams = [];
+        
+        if (search) {
+            // Enhanced search to include rental type, price, and amenities
+            const searchTerm = `%${search}%`;
+            
+            // Check if search contains price-related terms
+            const priceMatch = search.match(/(\d+)/);
+            let priceConditions = '';
+            let priceParams = [];
+            
+            if (priceMatch) {
+                const priceValue = parseInt(priceMatch[1]);
+                // Allow for price range searches (±20% of searched price)
+                const priceMin = priceValue * 0.8;
+                const priceMax = priceValue * 1.2;
+                priceConditions = ` OR (p.price >= ? AND p.price <= ?)`;
+                priceParams = [priceMin, priceMax];
+            }
+            
+            whereClause += ` AND (
+                p.street LIKE ? OR 
+                p.barangay LIKE ? OR 
+                p.city LIKE ? OR 
+                p.description LIKE ? OR
+                rt.type_name LIKE ? OR
+                rt.display_name LIKE ? OR
+                CAST(p.price AS CHAR) LIKE ? OR
+                rm.room_type LIKE ? OR
+                rm.bathroom_type LIKE ? OR
+                EXISTS (
+                    SELECT 1 FROM post_amenities pa 
+                    WHERE pa.post_id = p.post_id 
+                    AND pa.amenity_name LIKE ?
+                )${priceConditions}
+            )`;
+            
+            queryParams.push(
+                searchTerm, searchTerm, searchTerm, searchTerm, // location and description
+                searchTerm, searchTerm, // rental types
+                searchTerm, // price as string
+                searchTerm, searchTerm, // room details
+                searchTerm, // amenities
+                ...priceParams // price range if applicable
+            );
+        }
+        
+        if (barangay) {
+            whereClause += ' AND p.barangay = ?';
+            queryParams.push(barangay);
+        }
+        
+        if (city) {
+            whereClause += ' AND p.city = ?';
+            queryParams.push(city);
+        }
+        
+        if (type) {
+            whereClause += ' AND rt.type_name = ?';
+            queryParams.push(type);
+        }
+        
+        if (minPrice) {
+            whereClause += ' AND p.price >= ?';
+            queryParams.push(parseFloat(minPrice));
+        }
+        
+        if (maxPrice) {
+            whereClause += ' AND p.price <= ?';
+            queryParams.push(parseFloat(maxPrice));
+        }
+        
+        if (rooms) {
+            whereClause += ' AND rm.number_of_rooms = ?';
+            queryParams.push(parseInt(rooms));
+        }
+        
+        if (bathroom) {
+            whereClause += ' AND rm.bathroom_type = ?';
+            queryParams.push(bathroom);
+        }
+        
+        // Build ORDER BY clause
+        let orderClause = 'ORDER BY ';
+        switch (sortBy) {
+            case 'price_low':
+                orderClause += 'p.price ASC';
+                break;
+            case 'price_high':
+                orderClause += 'p.price DESC';
+                break;
+            case 'rating':
+                orderClause += 'average_rating DESC';
+                break;
+            case 'oldest':
+                orderClause += 'p.created_at ASC';
+                break;
+            default: // newest
+                orderClause += 'p.created_at DESC';
+        }
+        
         const [listings] = await pool.query(`
             SELECT p.*, u.full_name as poster_name,
                    rt.type_name, rt.type_name as type,
@@ -132,8 +247,6 @@ app.get('/', async (req, res) => {
                    AVG(rat.stars) as average_rating,
                    COUNT(DISTINCT rat.rating_id) as rating_count,
                    rm.number_of_rooms, rm.bathroom_type, rm.room_type,
-                   rm.has_wifi, rm.has_cctv, rm.is_airconditioned,
-                   rm.has_parking, rm.has_own_electricity, rm.has_own_water,
                    p.latitude, p.longitude
             FROM posts p
             LEFT JOIN users u ON p.user_id = u.user_id
@@ -142,12 +255,33 @@ app.get('/', async (req, res) => {
             LEFT JOIN favorites f ON p.post_id = f.post_id
             LEFT JOIN ratings rat ON p.post_id = rat.post_id
             LEFT JOIN rooms rm ON p.post_id = rm.post_id
-            WHERE p.is_flagged = false
+            ${whereClause}
             GROUP BY p.post_id
-            ORDER BY p.created_at DESC
-        `);
+            ${orderClause}
+        `, queryParams);
 
         console.log('Raw listings data:', listings);
+
+        // Get amenities for each listing
+        const listingIds = listings.map(l => l.post_id);
+        let amenitiesMap = {};
+        
+        if (listingIds.length > 0) {
+            const [amenities] = await pool.query(`
+                SELECT post_id, amenity_name, amenity_type 
+                FROM post_amenities 
+                WHERE post_id IN (${listingIds.map(() => '?').join(',')})
+                ORDER BY amenity_type ASC, amenity_name ASC
+            `, listingIds);
+            
+            // Group amenities by post_id
+            amenities.forEach(amenity => {
+                if (!amenitiesMap[amenity.post_id]) {
+                    amenitiesMap[amenity.post_id] = [];
+                }
+                amenitiesMap[amenity.post_id].push(amenity);
+            });
+        }
 
         // Process photos for each listing
         const processedListings = listings.map(listing => {
@@ -166,7 +300,8 @@ app.get('/', async (req, res) => {
                 rating_count: parseInt(listing.rating_count) || 0,
                 type: listing.type_name || 'Unknown Type',
                 latitude: listing.latitude ? parseFloat(listing.latitude) : null,
-                longitude: listing.longitude ? parseFloat(listing.longitude) : null
+                longitude: listing.longitude ? parseFloat(listing.longitude) : null,
+                allAmenities: amenitiesMap[listing.post_id] || []
             };
 
             console.log('Processed listing:', {
@@ -182,10 +317,46 @@ app.get('/', async (req, res) => {
         console.log('Total processed listings:', processedListings.length);
         console.log('Listings with coordinates:', processedListings.filter(l => l.latitude && l.longitude).length);
 
+        // Get filter options for dropdowns
+        const [barangays] = await pool.query(`
+            SELECT DISTINCT barangay FROM posts 
+            WHERE is_flagged = false AND status != 'archived' AND barangay IS NOT NULL 
+            ORDER BY barangay
+        `);
+        
+        const [cities] = await pool.query(`
+            SELECT DISTINCT city FROM posts 
+            WHERE is_flagged = false AND status != 'archived' AND city IS NOT NULL 
+            ORDER BY city
+        `);
+        
+        const [roomTypes] = await pool.query(`
+            SELECT DISTINCT rt.type_name, rt.display_name FROM room_types rt
+            JOIN posts p ON rt.type_id = p.type_id
+            WHERE p.is_flagged = false AND p.status != 'archived'
+            ORDER BY rt.display_name
+        `);
+
         res.render('index', { 
             title: 'Dwelly - Find Your Perfect Student Housing',
             user: req.session.user,
-            listings: processedListings
+            listings: processedListings,
+            filters: {
+                search,
+                barangay,
+                city,
+                type,
+                min_price: minPrice,
+                max_price: maxPrice,
+                rooms,
+                bathroom,
+                sort: sortBy
+            },
+            filterOptions: {
+                barangays: barangays.map(b => b.barangay),
+                cities: cities.map(c => c.city),
+                roomTypes: roomTypes
+            }
         });
     } catch (error) {
         console.error('Error fetching listings:', error);

@@ -94,7 +94,7 @@ router.get('/edit-profile', isAuthenticated, async (req, res) => {
         let courses = [];
         if (user.role === 'student') {
             [departments] = await pool.query('SELECT * FROM departments ORDER BY name');
-            [courses] = await pool.query('SELECT * FROM courses ORDER BY name');
+            [courses] = await pool.query('SELECT course_id, name, department_id FROM courses ORDER BY name');
         }
 
         res.render('users/edit-profile', {
@@ -121,7 +121,7 @@ router.post('/profile', isAuthenticated, async (req, res) => {
         const {
             full_name,
             email,
-            contact_number,
+            phone_number,
             id_number,
             year_level,
             department_id,
@@ -163,7 +163,7 @@ router.post('/profile', isAuthenticated, async (req, res) => {
             [
                 full_name,
                 email,
-                contact_number || null,
+                phone_number || null,
                 id_number || null,
                 year_level || null,
                 department_id || null,

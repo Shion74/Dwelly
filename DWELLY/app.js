@@ -86,6 +86,7 @@ const listingRoutes = require('./routes/listings');
 const userRoutes = require('./routes/users');
 const adminRoutes = require('./routes/admin');
 const favoritesRouter = require('./routes/favorites');
+const apiRoutes = require('./routes/api');
 
 app.use('/', require('./routes/index'));
 app.use('/auth', authRoutes);
@@ -93,6 +94,7 @@ app.use('/listings', listingRoutes);
 app.use('/users', userRoutes);
 app.use('/admin', adminRoutes);
 app.use('/favorites', favoritesRouter);
+app.use('/api', apiRoutes);
 
 // Test route for listings with coordinates
 app.get('/test-coordinates', async (req, res) => {

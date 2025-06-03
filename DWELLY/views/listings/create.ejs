@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="<%= csrfToken %>">
     <title><%= title %></title>
     <link rel="stylesheet" href="/css/style.css">
     <style>
@@ -213,6 +214,96 @@
             font-size: 0.9em;
             color: #666;
         }
+        
+        /* Enhanced styles for map link section */
+        .map-link-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .map-link-container h4 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .map-link-status {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .text-success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .text-warning {
+            color: #856404;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .text-danger {
+            color: #721c24;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .text-info {
+            color: #0c5460;
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+        }
+        
+        .btn-outline-primary {
+            background: transparent;
+            color: #3498db;
+            border: 1px solid #3498db;
+        }
+        
+        .btn-outline-primary:hover {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .location-inputs-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .auto-filled {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            transition: all 0.3s ease;
+        }
+        
+        .coordinate-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        @media (max-width: 768px) {
+            .coordinate-inputs {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -260,6 +351,8 @@
             <% } %>
 
             <form action="/listings/create" method="POST" enctype="multipart/form-data" id="listingForm">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                
                 <div class="form-card">
                     <div class="form-section">
                         <h3>Photos</h3>
@@ -271,6 +364,108 @@
                             </div>
                             <div class="photo-preview" id="photoPreview"></div>
                             <div class="form-text">Upload between 2 and 6 photos of your property. Supported formats: JPG, PNG, WebP. Max size: 5MB per image.</div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Map Link Section -->
+                    <div class="form-section">
+                        <div class="map-link-container">
+                            <h4>🗺️ Quick Location Setup</h4>
+                            <p style="margin-bottom: 1rem; color: #6c757d;">Paste a Google Maps or Apple Maps link to automatically fill location details below.</p>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="maps_link">Map Link (Optional)</label>
+                                <input type="url" 
+                                       class="form-control" 
+                                       id="maps_link" 
+                                       name="maps_link" 
+                                       value="<%= formData && formData.maps_link ? formData.maps_link : '' %>"
+                                       placeholder="Paste Google Maps or Apple Maps link here...">
+                                <!-- Status and extract button will be added here by JavaScript -->
+                            </div>
+                            
+                            <div class="form-text">
+                                <strong>Supported formats:</strong><br>
+                                • Google Maps: https://www.google.com/maps/place/...<br>
+                                • Google Maps (short): https://maps.app.goo.gl/...<br>
+                                • Apple Maps: https://maps.apple.com/?ll=...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Location Information Section -->
+                    <div class="form-section">
+                        <div class="location-inputs-container">
+                            <h3>📍 Location Information</h3>
+                            <p style="margin-bottom: 1.5rem; color: #6c757d;">
+                                These fields can be automatically filled using the map link above, or you can enter them manually.
+                            </p>
+                            
+                            <div class="form-group">
+                                <label class="form-label required" for="street">Street Address</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="street" 
+                                       name="street" 
+                                       required 
+                                       value="<%= formData ? formData.street : '' %>"
+                                       placeholder="e.g., 123 Juan Luna Street">
+                                <div class="form-text">The specific street address of the property.</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required" for="barangay">Barangay</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="barangay" 
+                                       name="barangay" 
+                                       required 
+                                       value="<%= formData ? formData.barangay : '' %>"
+                                       placeholder="e.g., Poblacion District">
+                                <div class="form-text">The barangay where the property is located.</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required" for="city">City</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="city" 
+                                       name="city" 
+                                       required 
+                                       value="<%= formData && formData.city ? formData.city : 'Davao City' %>"
+                                       placeholder="Davao City">
+                                <div class="form-text">The city where the property is located.</div>
+                            </div>
+                            
+                            <div class="coordinate-inputs">
+                                <div class="form-group">
+                                    <label class="form-label" for="latitude">Latitude</label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="latitude" 
+                                           name="latitude" 
+                                           step="any" 
+                                           min="4" 
+                                           max="21"
+                                           value="<%= formData && formData.latitude ? formData.latitude : '' %>"
+                                           placeholder="7.0724147">
+                                    <div class="form-text">Latitude coordinate (automatically filled from map link).</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="longitude">Longitude</label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="longitude" 
+                                           name="longitude" 
+                                           step="any" 
+                                           min="116" 
+                                           max="127"
+                                           value="<%= formData && formData.longitude ? formData.longitude : '' %>"
+                                           placeholder="125.61276">
+                                    <div class="form-text">Longitude coordinate (automatically filled from map link).</div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -358,11 +553,6 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label required" for="street">Street Address</label>
-                            <input type="text" class="form-control" id="street" name="street" required value="<%= formData ? formData.street : '' %>">
-                        </div>
-
-                        <div class="form-group">
                             <label class="form-label" for="building_name">Building Name (if applicable)</label>
                             <input type="text" class="form-control" id="building_name" name="building_name" value="<%= formData && formData.building_name ? formData.building_name : '' %>">
                         </div>
@@ -373,27 +563,6 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label" for="maps_link">Google/Apple Maps Link</label>
-                            <input
-                                type="url"
-                                class="form-control"
-                                id="maps_link"
-                                name="maps_link"
-                                value="<%= formData && formData.maps_link ? formData.maps_link : '' %>"
-                                placeholder="e.g. https://maps.app.goo.gl/8FxdZA3SrtzYczLe6"
-                                pattern="(@?https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|maps\.apple\.com)\/.*)?"
-                            >
-                            <div class="form-text">
-                                Paste the full Google Maps or Apple Maps link. If your link starts with <b>@</b>, remove the <b>@</b>.
-                            </div>
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label required" for="barangay">Barangay</label>
-                            <input type="text" class="form-control" id="barangay" name="barangay" required value="<%= formData ? formData.barangay : '' %>">
-                        </div>
-
-                        <div class="form-group">
                             <label class="form-label" for="description">Description</label>
                             <textarea class="form-control" id="description" name="description" rows="4"><%= formData && formData.description ? formData.description : '' %></textarea>
                             <div class="form-text">Describe the property, its features, and any important details potential tenants should know.</div>
@@ -401,13 +570,11 @@
                     </div>
 
                     <div class="form-section">
-                        <h3>Location</h3>
+                        <h3>Interactive Map</h3>
                         <div class="form-group">
-                            <label class="form-label">Map Location</label>
+                            <label class="form-label">Pinpoint Location on Map</label>
                             <div id="map" style="height: 400px; margin-bottom: 1rem;"></div>
-                            <input type="hidden" id="latitude" name="latitude" value="<%= formData && formData.latitude ? formData.latitude : '' %>">
-                            <input type="hidden" id="longitude" name="longitude" value="<%= formData && formData.longitude ? formData.longitude : '' %>">
-                            <div class="form-text">Click on the map to set the exact location of your property.</div>
+                            <div class="form-text">Click on the map to set the exact location of your property, or the map will automatically update when you extract location from a map link above.</div>
                         </div>
                     </div>
 
@@ -448,6 +615,9 @@
     <!-- Add Leaflet Control Search -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
     <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    
+    <!-- Include the Location Extractor JavaScript -->
+    <script src="/js/locationExtractor.js"></script>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
@@ -634,10 +804,49 @@
                                '1. Click on the map to set location<br>' +
                                '2. Or use the search box above<br>' +
                                '3. Drag the marker to adjust<br>' +
-                               '4. Blue circle shows 1km radius from Mapúa';
+                               '4. Blue circle shows 1km radius from Mapúa<br>' +
+                               '<em>Map updates automatically from map links above!</em>';
                 return div;
             };
             instructions.addTo(map);
+
+            // Enhanced map integration with location extractor
+            // Listen for coordinate updates from location extraction
+            const coordInputs = [latitudeInput, longitudeInput];
+            coordInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    const lat = parseFloat(latitudeInput.value);
+                    const lng = parseFloat(longitudeInput.value);
+                    
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        updateMarker([lat, lng]);
+                    }
+                });
+            });
+
+            // Listen for the custom locationExtracted event from the location extractor
+            document.addEventListener('locationExtracted', function(event) {
+                const { latitude, longitude } = event.detail;
+                console.log('🗺️ Map received location update:', { latitude, longitude });
+                
+                // Validate coordinates are within Philippines bounds
+                if (latitude >= 4 && latitude <= 21 && longitude >= 116 && longitude <= 127) {
+                    updateMarker([latitude, longitude]);
+                    
+                    // Show a brief notification on the map
+                    const notification = L.popup()
+                        .setLatLng([latitude, longitude])
+                        .setContent('<div style="text-align: center;"><strong>📍 Location Extracted!</strong><br>Coordinates auto-filled from map link</div>')
+                        .openOn(map);
+                    
+                    // Close notification after 3 seconds
+                    setTimeout(() => {
+                        map.closePopup(notification);
+                    }, 3000);
+                } else {
+                    console.warn('⚠️ Extracted coordinates outside Philippines bounds:', { latitude, longitude });
+                }
+            });
 
             // Custom amenities logic
             const customAmenityInput = document.getElementById('customAmenityInput');
@@ -661,13 +870,15 @@
                     const tag = document.createElement('span');
                     tag.className = 'amenity-tag';
                     tag.textContent = amenity;
+                    tag.style.cssText = 'background: #3498db; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem; margin: 0.25rem;';
+                    
                     const removeBtn = document.createElement('button');
                     removeBtn.type = 'button';
                     removeBtn.textContent = '×';
                     removeBtn.style.marginLeft = '0.5rem';
                     removeBtn.style.background = 'none';
                     removeBtn.style.border = 'none';
-                    removeBtn.style.color = '#e74c3c';
+                    removeBtn.style.color = 'white';
                     removeBtn.style.cursor = 'pointer';
                     removeBtn.onclick = function() {
                         customAmenities.splice(idx, 1);
@@ -679,22 +890,49 @@
             }
 
             // On form submit, add custom amenities as hidden inputs
-            listingForm.addEventListener('submit', function() {
+            listingForm.addEventListener('submit', function(e) {
+                console.log('🚀 Form submission starting...');
+                
                 // Remove any previous hidden inputs
                 document.querySelectorAll('input[name="custom_amenities[]"]').forEach(e => e.remove());
                 
-                console.log('Form submit - custom amenities:', customAmenities);
                 if (customAmenities.length > 0) {
-                customAmenities.forEach(amenity => {
-                    const input = document.createElement('input');
-                    input.type = 'hidden';
-                    input.name = 'custom_amenities[]';
-                    input.value = amenity;
-                    listingForm.appendChild(input);
-                        console.log('Added hidden input:', input.name, '=', input.value);
-                });
+                    customAmenities.forEach(amenity => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'custom_amenities[]';
+                        input.value = amenity;
+                        listingForm.appendChild(input);
+                    });
                 }
+                
+                console.log('✅ Form submission proceeding with', customAmenities.length, 'custom amenities');
             });
+
+            // Show helpful hints for first-time users
+            const mapsLinkInput = document.getElementById('maps_link');
+            if (mapsLinkInput && !mapsLinkInput.value) {
+                setTimeout(() => {
+                    const hint = document.createElement('div');
+                    hint.className = 'alert alert-info';
+                    hint.style.cssText = 'margin-top: 1rem; font-size: 0.875rem;';
+                    hint.innerHTML = `
+                        <strong>💡 Pro Tip:</strong> 
+                        <ol style="margin: 0.5rem 0; padding-left: 1.5rem;">
+                            <li>Go to Google Maps or Apple Maps on your phone/computer</li>
+                            <li>Search for your property location</li>
+                            <li>Tap "Share" and copy the link</li>
+                            <li>Paste it in the Map Link field above</li>
+                            <li>Click "Extract Location" to auto-fill all location fields!</li>
+                        </ol>
+                    `;
+                    mapsLinkInput.parentNode.appendChild(hint);
+                    
+                    // Remove hint after 10 seconds or when user starts typing
+                    setTimeout(() => hint.remove(), 10000);
+                    mapsLinkInput.addEventListener('input', () => hint.remove(), { once: true });
+                }, 2000);
+            }
         });
     </script>
 </body>

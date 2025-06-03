@@ -7,7 +7,11 @@
     "start": "node app.js",
     "dev": "nodemon app.js",
     "watch": "nodemon --watch routes --watch views --watch public --watch config --watch app.js app.js",
-    "migrate": "node database/migrations/runner.js"
+    "migrate": "node database/migrations/runner.js",
+    "security:init": "node scripts/initializeSecurity.js",
+    "security:scan": "node scripts/securityScan.js",
+    "security:report": "node scripts/generateSecurityReport.js",
+    "test:geolocation": "node scripts/testGeoLocation.js"
   },
   "keywords": [
     "housing",
@@ -18,15 +22,26 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "axios": "^1.9.0",
+    "bad-words": "^3.0.4",
     "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
     "connect-flash": "^0.1.1",
+    "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "ejs": "^3.1.9",
     "express": "^4.18.2",
+    "express-rate-limit": "^7.5.0",
     "express-session": "^1.17.3",
+    "express-validator": "^7.0.1",
+    "helmet": "^7.1.0",
+    "isomorphic-dompurify": "^2.6.0",
     "mongoose": "^7.0.3",
+    "morgan": "^1.10.0",
     "multer": "^1.4.5-lts.1",
-    "mysql2": "^3.14.1"
+    "mysql2": "^3.14.1",
+    "sharp": "^0.32.6",
+    "validator": "^13.11.0"
   },
   "devDependencies": {
     "nodemon": "^2.0.22"

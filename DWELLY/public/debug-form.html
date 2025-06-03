@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Form Submission</title>
+</head>
+<body>
+    <h1>Debug Form Submission</h1>
+    
+    <script>
+        // Test 1: Check if CSRF token exists on create page
+        fetch('/listings/create')
+            .then(response => response.text())
+            .then(html => {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(html, 'text/html');
+                const csrfInput = doc.querySelector('input[name="_csrf"]');
+                
+                console.log('CSRF Input Found:', !!csrfInput);
+                if (csrfInput) {
+                    console.log('CSRF Token Value:', csrfInput.value.substring(0, 8) + '...');
+                } else {
+                    console.log('CSRF input not found in HTML');
+                }
+            })
+            .catch(error => console.error('Error fetching create page:', error));
+            
+        // Test 2: Debug current page's form if it exists
+        document.addEventListener('DOMContentLoaded', function() {
+            const csrfInput = document.querySelector('input[name="_csrf"]');
+            console.log('Current page CSRF input:', !!csrfInput);
+            if (csrfInput) {
+                console.log('Current CSRF token:', csrfInput.value.substring(0, 8) + '...');
+            }
+        });
+    </script>
+    
+    <p>Check the browser console for debug information.</p>
+    <p><a href="/listings/create">Go to Create Listing Page</a></p>
+    <p><a href="/listings/debug-csrf">Check CSRF Debug API</a></p>
+</body>
+</html> 

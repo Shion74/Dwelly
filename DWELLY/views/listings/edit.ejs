@@ -175,6 +175,119 @@
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+        
+        /* Enhanced styles for map link section */
+        .map-link-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .map-link-container h4 {
+            color: #2c3e50;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .map-link-status {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+        
+        .text-success {
+            color: #155724;
+            background: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .text-warning {
+            color: #856404;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .text-danger {
+            color: #721c24;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .text-info {
+            color: #0c5460;
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+        }
+        
+        .btn-outline-primary {
+            background: transparent;
+            color: #3498db;
+            border: 1px solid #3498db;
+        }
+        
+        .btn-outline-primary:hover {
+            background: #3498db;
+            color: white;
+        }
+        
+        .btn-sm {
+            padding: 0.5rem 1rem;
+            font-size: 0.875rem;
+        }
+        
+        .location-inputs-container {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .auto-filled {
+            background-color: #d4edda !important;
+            border-color: #28a745 !important;
+            transition: all 0.3s ease;
+        }
+        
+        .coordinate-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+        }
+        
+        .amenities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+        
+        .amenity-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        
+        .amenity-item input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+        }
+        
+        .amenity-item label {
+            margin: 0;
+            font-weight: normal;
+        }
+        
+        @media (max-width: 768px) {
+            .coordinate-inputs {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
 <body>
@@ -210,6 +323,8 @@
             <% } %>
 
             <form action="/listings/<%= listing.post_id %>/edit" method="POST" enctype="multipart/form-data" id="listingForm">
+                <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+                
                 <div class="form-card">
                     <div class="form-section">
                         <h3>Photos</h3>
@@ -239,6 +354,108 @@
                         </div>
                     </div>
 
+                    <!-- Enhanced Map Link Section -->
+                    <div class="form-section">
+                        <div class="map-link-container">
+                            <h4>🗺️ Update Location Quickly</h4>
+                            <p style="margin-bottom: 1rem; color: #6c757d;">Paste a new Google Maps or Apple Maps link to automatically update location details below.</p>
+                            
+                            <div class="form-group">
+                                <label class="form-label" for="maps_link">Map Link (Optional)</label>
+                                <input type="url" 
+                                       class="form-control" 
+                                       id="maps_link" 
+                                       name="maps_link" 
+                                       value="<%= formData.maps_link || '' %>"
+                                       placeholder="Paste Google Maps or Apple Maps link here...">
+                                <!-- Status and extract button will be added here by JavaScript -->
+                            </div>
+                            
+                            <div class="form-text">
+                                <strong>Supported formats:</strong><br>
+                                • Google Maps: https://www.google.com/maps/place/...<br>
+                                • Google Maps (short): https://maps.app.goo.gl/...<br>
+                                • Apple Maps: https://maps.apple.com/?ll=...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Enhanced Location Information Section -->
+                    <div class="form-section">
+                        <div class="location-inputs-container">
+                            <h3>📍 Location Information</h3>
+                            <p style="margin-bottom: 1.5rem; color: #6c757d;">
+                                These fields can be automatically updated using the map link above, or you can edit them manually.
+                            </p>
+                            
+                            <div class="form-group">
+                                <label class="form-label required" for="street">Street Address</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="street" 
+                                       name="street" 
+                                       required 
+                                       value="<%= formData.street %>"
+                                       placeholder="e.g., 123 Juan Luna Street">
+                                <div class="form-text">The specific street address of the property.</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required" for="barangay">Barangay</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="barangay" 
+                                       name="barangay" 
+                                       required 
+                                       value="<%= formData.barangay || '' %>"
+                                       placeholder="e.g., Poblacion District">
+                                <div class="form-text">The barangay where the property is located.</div>
+                            </div>
+
+                            <div class="form-group">
+                                <label class="form-label required" for="city">City</label>
+                                <input type="text" 
+                                       class="form-control" 
+                                       id="city" 
+                                       name="city" 
+                                       required 
+                                       value="<%= formData.city || 'Davao City' %>"
+                                       placeholder="Davao City">
+                                <div class="form-text">The city where the property is located.</div>
+                            </div>
+                            
+                            <div class="coordinate-inputs">
+                                <div class="form-group">
+                                    <label class="form-label" for="latitude">Latitude</label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="latitude" 
+                                           name="latitude" 
+                                           step="any" 
+                                           min="4" 
+                                           max="21"
+                                           value="<%= formData.latitude || '' %>"
+                                           placeholder="7.0724147">
+                                    <div class="form-text">Latitude coordinate (automatically filled from map link).</div>
+                                </div>
+                                
+                                <div class="form-group">
+                                    <label class="form-label" for="longitude">Longitude</label>
+                                    <input type="number" 
+                                           class="form-control" 
+                                           id="longitude" 
+                                           name="longitude" 
+                                           step="any" 
+                                           min="116" 
+                                           max="127"
+                                           value="<%= formData.longitude || '' %>"
+                                           placeholder="125.61276">
+                                    <div class="form-text">Longitude coordinate (automatically filled from map link).</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="form-section">
                         <h3>Property Details</h3>
                         <div class="form-group">
@@ -259,11 +476,6 @@
                         </div>
 
                         <div class="form-group">
-                            <label class="form-label required" for="street">Street Address</label>
-                            <input type="text" class="form-control" id="street" name="street" required value="<%= formData.street %>">
-                        </div>
-
-                        <div class="form-group">
                             <label class="form-label" for="building_name">Building Name (if applicable)</label>
                             <input type="text" class="form-control" id="building_name" name="building_name" value="<%= formData.building_name || '' %>">
                         </div>
@@ -271,27 +483,6 @@
                         <div class="form-group">
                             <label class="form-label" for="unit_number">Unit Number (if applicable)</label>
                             <input type="text" class="form-control" id="unit_number" name="unit_number" value="<%= formData.unit_number || '' %>">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label required" for="barangay">Barangay</label>
-                            <input type="text" class="form-control" id="barangay" name="barangay" required value="<%= formData.barangay || '' %>">
-                        </div>
-
-                        <div class="form-group">
-                            <label class="form-label" for="maps_link">Google/Apple Maps Link</label>
-                            <input
-                                type="url"
-                                class="form-control"
-                                id="maps_link"
-                                name="maps_link"
-                                value="<%= formData.maps_link || '' %>"
-                                placeholder="e.g. https://maps.app.goo.gl/8FxdZA3SrtzYczLe6"
-                                pattern="(@?https?:\/\/(maps\.app\.goo\.gl|goo\.gl\/maps|maps\.apple\.com)\/.*)?"
-                            >
-                            <div class="form-text">
-                                Paste the full Google Maps or Apple Maps link. If your link starts with <b>@</b>, remove the <b>@</b>.
-                            </div>
                         </div>
 
                         <div class="form-group">
@@ -320,37 +511,37 @@
 
                         <div class="form-group">
                             <label class="form-label">Amenities</label>
-                            <div class="amenities-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; margin-top: 0.5rem;">
-                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="checkbox" id="has_wifi" name="has_wifi" style="width: 18px; height: 18px;" <%= formData.has_wifi ? 'checked' : '' %>>
-                                    <label for="has_wifi" style="margin: 0; font-weight: normal;">WiFi</label>
+                            <div class="amenities-grid">
+                                <div class="amenity-item">
+                                    <input type="checkbox" id="has_wifi" name="has_wifi" <%= formData.has_wifi ? 'checked' : '' %>>
+                                    <label for="has_wifi">WiFi</label>
                                 </div>
-                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="checkbox" id="has_cctv" name="has_cctv" style="width: 18px; height: 18px;" <%= formData.has_cctv ? 'checked' : '' %>>
-                                    <label for="has_cctv" style="margin: 0; font-weight: normal;">CCTV</label>
+                                <div class="amenity-item">
+                                    <input type="checkbox" id="has_cctv" name="has_cctv" <%= formData.has_cctv ? 'checked' : '' %>>
+                                    <label for="has_cctv">CCTV</label>
                                 </div>
-                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="checkbox" id="is_airconditioned" name="is_airconditioned" style="width: 18px; height: 18px;" <%= formData.is_airconditioned ? 'checked' : '' %>>
-                                    <label for="is_airconditioned" style="margin: 0; font-weight: normal;">Airconditioned</label>
+                                <div class="amenity-item">
+                                    <input type="checkbox" id="is_airconditioned" name="is_airconditioned" <%= formData.is_airconditioned ? 'checked' : '' %>>
+                                    <label for="is_airconditioned">Airconditioned</label>
                                 </div>
-                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="checkbox" id="has_parking" name="has_parking" style="width: 18px; height: 18px;" <%= formData.has_parking ? 'checked' : '' %>>
-                                    <label for="has_parking" style="margin: 0; font-weight: normal;">Parking</label>
+                                <div class="amenity-item">
+                                    <input type="checkbox" id="has_parking" name="has_parking" <%= formData.has_parking ? 'checked' : '' %>>
+                                    <label for="has_parking">Parking</label>
                                 </div>
-                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="checkbox" id="has_own_electricity" name="has_own_electricity" style="width: 18px; height: 18px;" <%= formData.has_own_electricity ? 'checked' : '' %>>
-                                    <label for="has_own_electricity" style="margin: 0; font-weight: normal;">Own Electricity Meter</label>
+                                <div class="amenity-item">
+                                    <input type="checkbox" id="has_own_electricity" name="has_own_electricity" <%= formData.has_own_electricity ? 'checked' : '' %>>
+                                    <label for="has_own_electricity">Own Electricity Meter</label>
                                 </div>
-                                <div class="amenity-item" style="display: flex; align-items: center; gap: 0.5rem;">
-                                    <input type="checkbox" id="has_own_water" name="has_own_water" style="width: 18px; height: 18px;" <%= formData.has_own_water ? 'checked' : '' %>>
-                                    <label for="has_own_water" style="margin: 0; font-weight: normal;">Own Water Meter</label>
+                                <div class="amenity-item">
+                                    <input type="checkbox" id="has_own_water" name="has_own_water" <%= formData.has_own_water ? 'checked' : '' %>>
+                                    <label for="has_own_water">Own Water Meter</label>
                                 </div>
                             </div>
                             <div class="form-group" style="margin-top:1rem;">
                                 <label class="form-label">Other Amenities</label>
                                 <div style="display:flex; gap:0.5rem;">
-                                    <input type="text" id="customAmenityInput" class="form-control" placeholder="Add custom amenity..." style="flex: 1;">
-                                    <button type="button" id="addCustomAmenity" onclick="console.log('Inline onclick fired'); window.addCustomAmenityFallback && window.addCustomAmenityFallback();" style="padding: 0.75rem 1rem; background: #95a5a6; color: white; border: none; border-radius: 5px; cursor: pointer; white-space: nowrap; transition: background 0.3s ease;" onmouseover="this.style.background='#7f8c8d'" onmouseout="this.style.background='#95a5a6'">Add</button>
+                                    <input type="text" id="customAmenityInput" class="form-control" placeholder="Add custom amenity...">
+                                    <button type="button" id="addCustomAmenity" class="btn btn-secondary">Add</button>
                                 </div>
                                 <div id="customAmenitiesList" style="margin-top:0.5rem; display:flex; flex-wrap:wrap; gap:0.5rem;"></div>
                             </div>
@@ -364,13 +555,11 @@
                     </div>
 
                     <div class="form-section">
-                        <h3>Location</h3>
+                        <h3>Interactive Map</h3>
                         <div class="form-group">
-                            <label class="form-label">Map Location</label>
+                            <label class="form-label">Pinpoint Location on Map</label>
                             <div id="map" style="height: 400px; margin-bottom: 1rem;"></div>
-                            <input type="hidden" id="latitude" name="latitude" value="<%= formData.latitude || '' %>">
-                            <input type="hidden" id="longitude" name="longitude" value="<%= formData.longitude || '' %>">
-                            <div class="form-text">Click on the map to set the exact location of your property.</div>
+                            <div class="form-text">Click on the map to adjust the exact location of your property, or the map will automatically update when you extract location from a map link above.</div>
                         </div>
                     </div>
 
@@ -408,101 +597,11 @@
 
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.css" />
-    <script src="https://unpkg.com/leaflet-control-geocoder/dist/Control.Geocoder.js"></script>
+    
+    <!-- Include the Location Extractor JavaScript -->
+    <script src="/js/locationExtractor.js"></script>
+
     <script>
-        // Global variables and functions for custom amenities
-        let customAmenities = <%-JSON.stringify(customAmenities || [])%>;
-        let customAmenityInput, customAmenitiesList;
-
-        function addCustomAmenityGlobal() {
-            console.log('Global add custom amenity called');
-            if (!customAmenityInput) {
-                customAmenityInput = document.getElementById('customAmenityInput');
-            }
-            if (!customAmenitiesList) {
-                customAmenitiesList = document.getElementById('customAmenitiesList');
-            }
-            
-            if (customAmenityInput && customAmenitiesList) {
-                const value = customAmenityInput.value.trim();
-                console.log('Input value:', value);
-                if (value && !customAmenities.includes(value)) {
-                    customAmenities.push(value);
-                    console.log('Added amenity, current list:', customAmenities);
-                    renderCustomAmenitiesGlobal();
-                    customAmenityInput.value = '';
-                } else {
-                    console.log('Amenity not added - empty or duplicate');
-                }
-            } else {
-                console.error('Custom amenity elements not found');
-            }
-        }
-
-        function renderCustomAmenitiesGlobal() {
-            if (!customAmenitiesList) {
-                customAmenitiesList = document.getElementById('customAmenitiesList');
-            }
-            if (customAmenitiesList) {
-                console.log('Rendering custom amenities:', customAmenities);
-                customAmenitiesList.innerHTML = '';
-                customAmenities.forEach((amenity, idx) => {
-                    const tag = document.createElement('span');
-                    tag.className = 'amenity-tag';
-                    tag.style.cssText = 'display: inline-block; background: #e1f0ff; color: #3498db; border-radius: 15px; font-size: 0.75rem; padding: 0.25rem 0.5rem; margin-right: 0.25rem; margin-bottom: 0.25rem;';
-                    tag.textContent = amenity;
-                    const removeBtn = document.createElement('button');
-                    removeBtn.type = 'button';
-                    removeBtn.textContent = '×';
-                    removeBtn.style.marginLeft = '0.5rem';
-                    removeBtn.style.background = 'none';
-                    removeBtn.style.border = 'none';
-                    removeBtn.style.color = '#e74c3c';
-                    removeBtn.style.cursor = 'pointer';
-                    removeBtn.onclick = function() {
-                        customAmenities.splice(idx, 1);
-                        renderCustomAmenitiesGlobal();
-                    };
-                    tag.appendChild(removeBtn);
-                    customAmenitiesList.appendChild(tag);
-                });
-            }
-        }
-
-        // Make function available globally
-        window.addCustomAmenityFallback = addCustomAmenityGlobal;
-
-        // Photo management functions
-        function removeCurrentPhoto(index) {
-            console.log('Removing current photo at index:', index);
-            const photoItem = document.querySelector(`[data-photo-index="${index}"]`);
-            if (photoItem) {
-                photoItem.remove();
-                updatePhotoCount();
-            }
-        }
-
-        function updatePhotoCount() {
-            const currentPhotos = document.querySelectorAll('#currentPhotos .photo-item').length;
-            const newPhotos = document.querySelectorAll('#photoPreview .photo-item').length;
-            const totalPhotos = currentPhotos + newPhotos;
-            
-            console.log(`Photo count - Current: ${currentPhotos}, New: ${newPhotos}, Total: ${totalPhotos}`);
-            
-            // Update the form text to show current count
-            const formText = document.querySelector('#photoPreview').nextElementSibling;
-            if (formText) {
-                formText.textContent = `Add more photos to your listing. Current total: ${totalPhotos}/6 photos. Supported formats: JPG, PNG, WebP. Max size: 5MB per image.`;
-            }
-            
-            return totalPhotos;
-        }
-
-        // Make functions globally available
-        window.removeCurrentPhoto = removeCurrentPhoto;
-        window.updatePhotoCount = updatePhotoCount;
-
         document.addEventListener('DOMContentLoaded', function() {
             const photoUpload = document.getElementById('photoUpload');
             const photosInput = document.getElementById('photos');
@@ -514,41 +613,12 @@
                 photosInput.click();
             });
             
-            // Handle drag and drop
-            photoUpload.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                photoUpload.style.borderColor = '#3498db';
-            });
-            
-            photoUpload.addEventListener('dragleave', function() {
-                photoUpload.style.borderColor = '#ddd';
-            });
-            
-            photoUpload.addEventListener('drop', function(e) {
-                e.preventDefault();
-                photoUpload.style.borderColor = '#ddd';
-                
-                if (e.dataTransfer.files.length) {
-                    photosInput.files = e.dataTransfer.files;
-                    updatePhotoPreview();
-                }
-            });
-            
             // Handle file selection
             photosInput.addEventListener('change', updatePhotoPreview);
             
             // Update photo preview
             function updatePhotoPreview() {
                 photoPreview.innerHTML = '';
-                
-                const currentPhotoCount = document.querySelectorAll('#currentPhotos .photo-item').length;
-                const maxNewPhotos = 6 - currentPhotoCount;
-                
-                if (photosInput.files.length > maxNewPhotos) {
-                    alert(`You can only add ${maxNewPhotos} more photos. You currently have ${currentPhotoCount} photos.`);
-                    photosInput.value = '';
-                    return;
-                }
                 
                 for (let i = 0; i < photosInput.files.length; i++) {
                     const file = photosInput.files[i];
@@ -586,50 +656,19 @@
                     
                     reader.readAsDataURL(file);
                 }
-                
-                // Update photo count display
-                updatePhotoCount();
             }
 
             // Initialize map
-            const map = L.map('map').setView([7.0633, 125.5956], 14);
+            const map = L.map('map').setView([<%= formData.latitude || 7.0633 %>, <%= formData.longitude || 125.5956 %>], 14);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '© OpenStreetMap contributors',
                 maxZoom: 18,
                 minZoom: 12
             }).addTo(map);
 
-            // Add search control
-            const geocoder = L.Control.geocoder({
-                defaultMarkGeocode: false,
-                placeholder: 'Search for a location in Davao City...',
-                errorMessage: 'No results found.',
-                geocoder: L.Control.Geocoder.nominatim({
-                    bounds: L.latLngBounds(
-                        [7.0, 125.4], // Southwest corner of Davao City
-                        [7.2, 125.7]  // Northeast corner of Davao City
-                    )
-                })
-            }).on('markgeocode', function(e) {
-                const latlng = e.geocode.center;
-                // Only allow locations within Davao City bounds
-                if (latlng.lat >= 7.0 && latlng.lat <= 7.2 && 
-                    latlng.lng >= 125.4 && latlng.lng <= 125.7) {
-                    updateMarker(latlng);
-                } else {
-                    alert('Please select a location within Davao City');
-                }
-            }).addTo(map);
-
             // Add Mapúa marker
             const mapuaMarker = L.marker([7.0633, 125.5956]).addTo(map);
-            mapuaMarker.bindPopup('<strong>Mapúa Malayan Colleges Mindanao</strong><br>Reference point for student housing').openPopup();
-
-            // Add distance circle (1km radius)
-            let distanceCircle = L.circle([7.0633, 125.5956], {
-                radius: 1000,
-                className: 'distance-circle'
-            }).addTo(map);
+            mapuaMarker.bindPopup('<strong>Mapúa Malayan Colleges Mindanao</strong><br>Reference point for student housing');
 
             let marker = null;
             const latitudeInput = document.getElementById('latitude');
@@ -643,6 +682,7 @@
                     marker = L.marker(latlng, {
                         draggable: true
                     }).addTo(map);
+                    
                     // Add drag end event
                     marker.on('dragend', function(e) {
                         const newLatLng = e.target.getLatLng();
@@ -655,23 +695,13 @@
 
             // Function to update input values
             function updateInputs(latlng) {
-                if (latlng && typeof latlng.lat === 'number' && typeof latlng.lng === 'number') {
                 latitudeInput.value = latlng.lat.toFixed(6);
                 longitudeInput.value = latlng.lng.toFixed(6);
-                } else {
-                    console.error('Invalid latlng object:', latlng);
-                }
             }
 
             // Add marker if coordinates exist
             if (latitudeInput.value && longitudeInput.value) {
-                const lat = parseFloat(latitudeInput.value);
-                const lng = parseFloat(longitudeInput.value);
-                if (!isNaN(lat) && !isNaN(lng)) {
-                    updateMarker([lat, lng]);
-                } else {
-                    console.log('Invalid coordinates, skipping marker placement');
-                }
+                updateMarker([latitudeInput.value, longitudeInput.value]);
             }
 
             // Handle map click
@@ -686,99 +716,119 @@
                 }
             });
 
-            // Add instructions to the map
-            const instructions = L.control({ position: 'topright' });
-            instructions.onAdd = function() {
-                const div = L.DomUtil.create('div', 'map-instructions');
-                div.innerHTML = '<strong>Instructions:</strong><br>' +
-                               '1. Click on the map to set location<br>' +
-                               '2. Or use the search box above<br>' +
-                               '3. Drag the marker to adjust<br>' +
-                               '4. Blue circle shows 1km radius from Mapúa';
-                return div;
-            };
-            instructions.addTo(map);
-
-            // Custom amenities logic - initialize elements and event listeners
-            customAmenityInput = document.getElementById('customAmenityInput');
-            const addCustomAmenityBtn = document.getElementById('addCustomAmenity');
-            customAmenitiesList = document.getElementById('customAmenitiesList');
-            
-            console.log('Custom amenity elements found:', {
-                input: !!customAmenityInput,
-                button: !!addCustomAmenityBtn,
-                list: !!customAmenitiesList
+            // Enhanced map integration with location extractor
+            // Listen for coordinate updates from location extraction
+            const coordInputs = [latitudeInput, longitudeInput];
+            coordInputs.forEach(input => {
+                input.addEventListener('change', function() {
+                    const lat = parseFloat(latitudeInput.value);
+                    const lng = parseFloat(longitudeInput.value);
+                    
+                    if (!isNaN(lat) && !isNaN(lng)) {
+                        updateMarker([lat, lng]);
+                    }
+                });
             });
 
-            // Render existing custom amenities on page load
-            renderCustomAmenitiesGlobal();
-            
-            // Initialize photo count display
-            updatePhotoCount();
+            // Listen for the custom locationExtracted event from the location extractor
+            document.addEventListener('locationExtracted', function(event) {
+                const { latitude, longitude } = event.detail;
+                console.log('🗺️ Map received location update:', { latitude, longitude });
+                
+                // Validate coordinates are within Philippines bounds
+                if (latitude >= 4 && latitude <= 21 && longitude >= 116 && longitude <= 127) {
+                    updateMarker([latitude, longitude]);
+                    
+                    // Show a brief notification on the map
+                    const notification = L.popup()
+                        .setLatLng([latitude, longitude])
+                        .setContent('<div style="text-align: center;"><strong>📍 Location Updated!</strong><br>Coordinates auto-filled from map link</div>')
+                        .openOn(map);
+                    
+                    // Close notification after 3 seconds
+                    setTimeout(() => {
+                        map.closePopup(notification);
+                    }, 3000);
+                } else {
+                    console.warn('⚠️ Extracted coordinates outside Philippines bounds:', { latitude, longitude });
+                }
+            });
 
-            // Add event listeners if elements exist
-            if (addCustomAmenityBtn) {
-                addCustomAmenityBtn.addEventListener('click', function(e) {
-                    console.log('Button clicked event fired');
-                    e.preventDefault();
-                    addCustomAmenityGlobal();
-                });
-            }
+            // Custom amenities logic
+            const customAmenityInput = document.getElementById('customAmenityInput');
+            const addCustomAmenityBtn = document.getElementById('addCustomAmenity');
+            const customAmenitiesList = document.getElementById('customAmenitiesList');
+
+            // Load existing custom amenities
+            let customAmenities = [];
+            <% if (listing.allAmenities) { %>
+                <% listing.allAmenities.forEach(function(amenity) { %>
+                    <% if (amenity.amenity_type === 'custom') { %>
+                        customAmenities.push('<%= amenity.amenity_name %>');
+                    <% } %>
+                <% }); %>
+            <% } %>
             
-            // Allow pressing Enter to add amenity
-            if (customAmenityInput) {
-                customAmenityInput.addEventListener('keypress', function(e) {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        addCustomAmenityGlobal();
-                    }
+            renderCustomAmenities();
+
+            addCustomAmenityBtn.addEventListener('click', function() {
+                const value = customAmenityInput.value.trim();
+                if (value && !customAmenities.includes(value)) {
+                    customAmenities.push(value);
+                    renderCustomAmenities();
+                    customAmenityInput.value = '';
+                }
+            });
+
+            function renderCustomAmenities() {
+                customAmenitiesList.innerHTML = '';
+                customAmenities.forEach((amenity, idx) => {
+                    const tag = document.createElement('span');
+                    tag.className = 'amenity-tag';
+                    tag.textContent = amenity;
+                    tag.style.cssText = 'background: #3498db; color: white; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.875rem; margin: 0.25rem;';
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.textContent = '×';
+                    removeBtn.style.marginLeft = '0.5rem';
+                    removeBtn.style.background = 'none';
+                    removeBtn.style.border = 'none';
+                    removeBtn.style.color = 'white';
+                    removeBtn.style.cursor = 'pointer';
+                    removeBtn.onclick = function() {
+                        customAmenities.splice(idx, 1);
+                        renderCustomAmenities();
+                    };
+                    tag.appendChild(removeBtn);
+                    customAmenitiesList.appendChild(tag);
                 });
             }
 
             // On form submit, add custom amenities as hidden inputs
-            if (listingForm) {
-                listingForm.addEventListener('submit', function(e) {
-                    console.log('=== FORM SUBMISSION DEBUG ===');
-                    
-                    // Remove any previous hidden inputs
-                    document.querySelectorAll('input[name="custom_amenities[]"]').forEach(e => e.remove());
-                    
-                    console.log('Form submit - custom amenities:', customAmenities);
-                    if (customAmenities && customAmenities.length > 0) {
-                        customAmenities.forEach(amenity => {
-                            const input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'custom_amenities[]';
-                            input.value = amenity;
-                            listingForm.appendChild(input);
-                            console.log('Added hidden input:', input.name, '=', input.value);
-                        });
-                    }
-                    
-                    // Debug: Log all keep_photos[] inputs
-                    const keepPhotosInputs = document.querySelectorAll('input[name="keep_photos[]"]');
-                    console.log('Keep photos inputs found:', keepPhotosInputs.length);
-                    keepPhotosInputs.forEach((input, index) => {
-                        console.log(`Keep photo ${index}:`, input.value, 'Parent:', input.parentElement.className);
+            listingForm.addEventListener('submit', function() {
+                // Remove any previous hidden inputs
+                document.querySelectorAll('input[name="custom_amenities[]"]').forEach(e => e.remove());
+                
+                if (customAmenities.length > 0) {
+                    customAmenities.forEach(amenity => {
+                        const input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'custom_amenities[]';
+                        input.value = amenity;
+                        listingForm.appendChild(input);
                     });
-                    
-                    // Debug: Log all form data
-                    const formData = new FormData(listingForm);
-                    console.log('All form data:');
-                    for (let [key, value] of formData.entries()) {
-                        if (key === 'keep_photos[]' || key === 'keep_photos' || key === 'new_photos') {
-                            console.log(`  ${key}:`, value);
-                        }
-                    }
-                    
-                    // Debug: Check if any photos are being uploaded
-                    const newPhotosInput = document.getElementById('photos');
-                    console.log('New photos selected:', newPhotosInput.files.length);
-                    
-                    console.log('=== END FORM DEBUG ===');
-                });
-            }
+                }
+            });
         });
+
+        // Function to remove current photos
+        function removeCurrentPhoto(index) {
+            const photoItem = document.querySelector(`[data-photo-index="${index}"]`);
+            if (photoItem) {
+                photoItem.remove();
+            }
+        }
     </script>
 </body>
 </html> 

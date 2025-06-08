@@ -86,9 +86,7 @@ CREATE TABLE posts (
     price DECIMAL(10,2),
     -- Price range for filtering
     price_range ENUM('below_3000', '3000_to_5000', '5000_to_8000', '8000_to_12000', 'above_12000'),
-    availability_status ENUM('available', 'rented', 'reserved') DEFAULT 'available',
-    -- Status for advanced reporting/archiving
-    status ENUM('available', 'occupied', 'archived') NOT NULL DEFAULT 'available',
+    availability_status ENUM('available', 'occupied', 'archived') DEFAULT 'available',
     is_flagged BOOLEAN DEFAULT FALSE,
     is_deleted TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -110,6 +108,13 @@ CREATE TABLE rooms (
     number_of_rooms INT NOT NULL,
     bathroom_type ENUM('common', 'own') NOT NULL,
     room_type ENUM('bare', 'semi_furnished', 'furnished') NOT NULL,
+    has_wifi BOOLEAN NOT NULL DEFAULT 0,
+    has_cctv BOOLEAN NOT NULL DEFAULT 0,
+    is_airconditioned BOOLEAN NOT NULL DEFAULT 0,
+    has_parking BOOLEAN NOT NULL DEFAULT 0,
+    has_own_electricity BOOLEAN NOT NULL DEFAULT 0,
+    has_own_water BOOLEAN NOT NULL DEFAULT 0,
+    is_deleted TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
     INDEX idx_post (post_id)
@@ -120,11 +125,7 @@ CREATE TABLE post_amenities (
     amenity_id INT PRIMARY KEY AUTO_INCREMENT,
     post_id INT NOT NULL,
     amenity_name VARCHAR(100) NOT NULL,
-    amenity_type ENUM('default', 'custom') DEFAULT 'custom',
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
-    INDEX idx_post (post_id),
-    INDEX idx_type (amenity_type)
+    FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE
 );
 
 -- Create contacts table for post contacts
@@ -168,13 +169,14 @@ CREATE TABLE ratings (
     rating_id INT PRIMARY KEY AUTO_INCREMENT,
     user_id INT NOT NULL,
     post_id INT NOT NULL,
+    rating_type ENUM('overall', 'cleanliness', 'landlord', 'price', 'location') NOT NULL,
     stars INT NOT NULL CHECK (stars >= 1 AND stars <= 5),
     comment TEXT,
     is_deleted TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,
     FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
-    UNIQUE KEY unique_user_post_rating (user_id, post_id),
+    UNIQUE KEY unique_user_post_rating (user_id, post_id, rating_type),
     INDEX idx_post (post_id)
 );
 
@@ -184,7 +186,7 @@ CREATE TABLE reports (
     post_id INT NOT NULL,
     reporter_id INT NOT NULL,
     reason TEXT NOT NULL,
-    type ENUM('occupied', 'scam', 'other') NOT NULL,
+    type ENUM('occupied', 'scam', 'other') NOT NULL DEFAULT 'other',
     is_deleted TINYINT(1) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (post_id) REFERENCES posts(post_id) ON DELETE CASCADE,
